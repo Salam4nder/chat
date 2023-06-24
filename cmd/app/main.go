@@ -4,15 +4,33 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Salam4nder/chat/internal/chat"
+	"github.com/google/uuid"
+
 	"github.com/olahol/melody"
 )
 
 func main() {
 	m := melody.New()
 
+	var rooms = make(map[string]*chat.Room)
+
 	// Event handler for new connections
 	m.HandleConnect(func(session *melody.Session) {
 		fmt.Println("New connection established")
+
+		ID := uuid.New()
+
+		room := chat.NewRoom(ID)
+
+		rooms[ID.String()].Join <- session
+
+		rooms[ID.String()].Sessions = append(
+			rooms[ID.String()].Sessions,
+			session,
+		)
+
+		room.Run()
 	})
 
 	// Event handler for disconnections
@@ -22,8 +40,8 @@ func main() {
 
 	// Event handler for received messages
 	m.HandleMessage(func(session *melody.Session, message []byte) {
-		// Broadcast the received message to all connected clients
-		// m.Broadcast(message)
+		rooms[session.Request.URL.Query().Get("room")].In <- message
+		session.Write(message)
 	})
 
 	// Serve the chat application
