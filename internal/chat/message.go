@@ -1,4 +1,4 @@
-package domain
+package chat
 
 import (
 	"github.com/google/uuid"
@@ -9,5 +9,5 @@ type Message struct {
 	ID        uuid.UUID
 	ChannelID uuid.UUID
 	Body      interface{}
-	From      string
+	Author    string
 }
