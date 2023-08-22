@@ -2,7 +2,7 @@ test:
 	go test -v ./...
 
 run:
-	go run ./cmd/app/main.go
+	go run cmd/chat/main.go
 
 docker:
 	docker build -t chat .
