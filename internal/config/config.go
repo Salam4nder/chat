@@ -10,24 +10,29 @@ import (
 
 // App holds the application-wide configuration.
 type App struct {
-	Name       string
-	HTTPServer *HTTPServer
+	Name        string      `mapstructure:"appName"`
+	Environment string      `mapstructure:"appEnvironment"`
+	HTTPServer  *HTTPServer `mapstructure:"httpServer"`
 }
 
 // HTTPServer holds the configuration for the HTTP server.
 type HTTPServer struct {
-	Host string
-	Port string
+	Host string `mapstructure:"httpHost"`
+	Port string `mapstructure:"httpPort"`
 }
 
 // New returns the application-wide configuration.
 func New() (*App, error) {
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".../config")
+	viper.SetConfigName("config.yaml")
+	viper.AddConfigPath("./config")
 	viper.AutomaticEnv()
 	viper.SetConfigType("yaml")
 
 	var cfg App
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+	}
 
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, err
