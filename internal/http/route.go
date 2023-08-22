@@ -1,5 +1,10 @@
 package http
 
-func (x *Server) initRoutes() {
+import (
+	"net/http"
+)
 
+// InitRoutes initializes routes.
+func InitRoutes() {
+	http.HandleFunc("/chat", handleWS)
 }
