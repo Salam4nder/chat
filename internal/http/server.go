@@ -4,13 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // Server ...
 type Server struct {
 	http   *http.Server
-	logger *zerolog.Logger
 	health *health
 }
 
@@ -26,6 +25,7 @@ type Option func(*Server)
 // New returns a new HTTP server.
 func New() *Server {
 	return &Server{
+		http: &http.Server{},
 		health: &health{
 			Status:    "Starting",
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -35,7 +35,7 @@ func New() *Server {
 
 // Serve starts serving HTTP requests.
 func (x *Server) Serve() error {
-	x.logger.Info().Msgf("Starting HTTP server on %s", x.http.Addr)
+	log.Info().Msgf("Serving HTTP server on %s", x.http.Addr)
 
 	x.Ping()
 
@@ -49,13 +49,6 @@ func (x *Server) WithOptions(opts ...Option) *Server {
 	}
 
 	return x
-}
-
-// WithLogger configures the HTTP server with the provided logger.
-func WithLogger(logger zerolog.Logger) Option {
-	return func(x *Server) {
-		x.logger = &logger
-	}
 }
 
 // WithAddr configures the HTTP server with the provided address.
@@ -98,6 +91,6 @@ func (x *Server) Ping() {
 	x.health.Status = "Healthy"
 	x.health.Timestamp = time.Now().Format(time.RFC3339)
 
-	x.logger.Info().Msgf("Health: %s", x.health.Status)
-	x.logger.Info().Msgf("Timestamp: %s", x.health.Timestamp)
+	log.Info().Msgf("Health: %s", x.health.Status)
+	log.Info().Msgf("Timestamp: %s", x.health.Timestamp)
 }
