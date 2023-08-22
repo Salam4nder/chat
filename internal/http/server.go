@@ -4,15 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Salam4nder/chat/internal/config"
-
 	"github.com/rs/zerolog"
 )
 
 // Server ...
 type Server struct {
 	http   *http.Server
-	config *config.App
 	logger *zerolog.Logger
 	health *health
 }
@@ -23,18 +20,84 @@ type health struct {
 	ServiceName string `json:"service_name"`
 }
 
+// Option is an option that configures an HTTP server.
+type Option func(*Server)
+
 // New returns a new HTTP server.
-func New(
-	cfg *config.App,
-	log *zerolog.Logger,
-) *Server {
+func New() *Server {
 	return &Server{
-		config: cfg,
-		logger: log,
 		health: &health{
-			Status:      "Starting",
-			Timestamp:   time.Now().Format(time.RFC3339),
-			ServiceName: "chat",
+			Status:    "Starting",
+			Timestamp: time.Now().Format(time.RFC3339),
 		},
 	}
+}
+
+// Serve starts serving HTTP requests.
+func (x *Server) Serve() error {
+	x.logger.Info().Msgf("Starting HTTP server on %s", x.http.Addr)
+
+	x.Ping()
+
+	return x.http.ListenAndServe()
+}
+
+// WithOptions configures the HTTP server with the provided options.
+func (x *Server) WithOptions(opts ...Option) *Server {
+	for _, opt := range opts {
+		opt(x)
+	}
+
+	return x
+}
+
+// WithLogger configures the HTTP server with the provided logger.
+func WithLogger(logger zerolog.Logger) Option {
+	return func(x *Server) {
+		x.logger = &logger
+	}
+}
+
+// WithAddr configures the HTTP server with the provided address.
+func WithAddr(addr string) Option {
+	return func(x *Server) {
+		x.http.Addr = addr
+	}
+}
+
+// WithHandler configures the HTTP server with the provided handler.
+func WithHandler(handler http.Handler) Option {
+	return func(x *Server) {
+		x.http.Handler = handler
+	}
+}
+
+// WithTimeout configures the HTTP server with the provided read and write timeout.
+func WithTimeout(read, write time.Duration) Option {
+	return func(x *Server) {
+		x.http.ReadTimeout = read
+		x.http.WriteTimeout = write
+	}
+}
+
+// WithServiceName configures the HTTP server with the provided service name.
+func WithServiceName(name string) Option {
+	return func(x *Server) {
+		x.health.ServiceName = name
+	}
+}
+
+// Ping checks the health of the server.
+// The different statuses are:
+// - Starting (when the server is starting)
+// - Healthy (when the server is ready to accept requests)
+// - Unhealthy (when the server is not ready to accept requests)
+// - Stopping (when the server is shutting down)
+// - Stopped (when the server is stopped)
+func (x *Server) Ping() {
+	x.health.Status = "Healthy"
+	x.health.Timestamp = time.Now().Format(time.RFC3339)
+
+	x.logger.Info().Msgf("Health: %s", x.health.Status)
+	x.logger.Info().Msgf("Timestamp: %s", x.health.Timestamp)
 }
