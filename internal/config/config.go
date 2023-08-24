@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -43,18 +43,16 @@ func New() (*App, error) {
 
 // Watch watches for changes in the configuration file and updates the configuration accordingly.
 // Stops watching if an error occurs while unmarshalling to avoid weird behavior.
-func (x App) Watch(logger zerolog.Logger) {
+func (x *App) Watch() {
 	for {
 		time.Sleep(10 * time.Second)
 		viper.WatchConfig()
 
 		if err := viper.Unmarshal(&x); err != nil {
-			logger.Error().Msgf("config: Error parsing config file, aborting... %s", err)
+			log.Error().Msgf("config: Error parsing config file, aborting... %s", err)
 
 			return
 		}
-
-		logger.Info().Msg("Config reloaded")
 	}
 }
 
