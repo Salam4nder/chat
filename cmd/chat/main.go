@@ -27,6 +27,7 @@ const (
 func main() {
 	config, err := config.New()
 	fatalOnError(err)
+	go config.Watch()
 
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -34,6 +35,8 @@ func main() {
 	if config.Environment == EnvironmentDev {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
+
+    log.Info().Str("service", config.Name).Send()
 
 	chat.Rooms = make(map[string]*chat.Room)
 
