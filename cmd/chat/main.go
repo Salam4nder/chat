@@ -26,17 +26,15 @@ const (
 
 func main() {
 	config, err := config.New()
-	fatalOnError(err)
+	exitOnError(err)
 	go config.Watch()
 
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-
 	if config.Environment == EnvironmentDev {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
-
-    log.Info().Str("service", config.Name).Send()
+	log.Info().Str("service", config.ServiceName).Send()
 
 	chat.Rooms = make(map[string]*chat.Room)
 
@@ -45,16 +43,16 @@ func main() {
 		http.WithHandler(nil),
 		http.WithTimeout(ReadTimeout, WriteTimeout),
 	)
-
 	http.InitRoutes()
 
 	if err := server.Serve(); err != nil {
-		fatalOnError(err)
+		exitOnError(err)
 	}
 }
 
-func fatalOnError(err error) {
+func exitOnError(err error) {
 	if err != nil {
-		log.Fatal().Err(err).Msg("main: fatal error")
+		log.Error().Err(err).Msg("main: failed to start session")
+		os.Exit(1)
 	}
 }
