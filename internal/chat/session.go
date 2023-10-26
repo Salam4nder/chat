@@ -46,19 +46,16 @@ func (x *Session) readPump() {
 	for {
 		messageType, message, err := x.Conn.ReadMessage()
 		if err != nil {
+			// Handle this better.
 			log.Println("Error reading message:", err)
-
 			continue
 		}
 
-		log.Println("Message received:", message)
-
 		x.Room.Broadcast <- Message{
-			Type:      messageType,
-			ChannelID: x.ID,
+			Type:      MessageType(messageType),
+			SessionID: x.ID,
 			Body:      message,
 		}
-		log.Printf("Message %s received in room %s", message, x.Room.ID)
 	}
 }
 
@@ -66,10 +63,10 @@ func (x *Session) writePump() {
 	defer x.Conn.Close()
 
 	for message := range x.In {
-		err := x.Conn.WriteMessage(message.Type, message.Body)
+		err := x.Conn.WriteMessage(int(message.Type), message.Body)
 		if err != nil {
+			// Handle this better.
 			log.Println("Error writing message:", err)
-
 			continue
 		}
 	}
