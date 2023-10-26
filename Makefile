@@ -1,3 +1,4 @@
+.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint
 test: 
 	go test -v ./...
 
@@ -31,18 +32,6 @@ proto:
     --go-grpc_out=pkg/proto/gen --go-grpc_opt=paths=source_relative \
 	--grpc-gateway_out=pkg/proto/gen --grpc-gateway_opt=paths=source_relative \
      pkg/proto/*.proto
-
-test/integration:
-	docker compose -f test/integration/docker-compose.yaml up -d --wait
-	bash -c "trap '$(MAKE) test/integration/down' EXIT; $(MAKE) test/integration/run"
-
-test/integration/down:
-	docker compose -f test/integration/docker-compose.yaml down -v
-
-test/integration/run:
-	POSTGRES_PASSWORD=integration \
-	USER_SERVICE_SYMMETRIC_KEY=12345678901234567890123456789012 \
-	go test -tags integration -v --coverprofile=coverage.out -coverpkg ./... ./test/integration
 
 lint:
 	golangci-lint run --fix
