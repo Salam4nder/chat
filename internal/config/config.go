@@ -10,7 +10,7 @@ import (
 
 // App holds the application-wide configuration.
 type App struct {
-	Name        string      `mapstructure:"appName"`
+	ServiceName string      `mapstructure:"serviceName"`
 	Environment string      `mapstructure:"appEnvironment"`
 	HTTPServer  *HTTPServer `mapstructure:"httpServer"`
 }
@@ -50,7 +50,6 @@ func (x *App) Watch() {
 
 		if err := viper.Unmarshal(&x); err != nil {
 			log.Error().Msgf("config: Error parsing config file, aborting... %s", err)
-
 			return
 		}
 	}
