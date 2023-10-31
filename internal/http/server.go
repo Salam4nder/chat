@@ -28,7 +28,7 @@ func New() *Server {
 		http: &http.Server{},
 		health: &health{
 			Status:    "Starting",
-			Timestamp: time.Now().Format(time.RFC3339),
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
 		},
 	}
 }
