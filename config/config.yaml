@@ -1,4 +1,4 @@
-appName: "chat"
+serviceName: "chat"
 appEnvironment: "dev"
 httpServer:
   httpHost: "0.0.0.0"
