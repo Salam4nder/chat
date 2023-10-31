@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  chat:
+   image: chat:latest
+   ports:
+      - 8080:8080
+  scylla:
+    image: scylladb/scylla:latest 
+    ports:
+      - 9042:9042
