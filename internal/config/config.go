@@ -13,12 +13,22 @@ type App struct {
 	ServiceName string      `mapstructure:"serviceName"`
 	Environment string      `mapstructure:"appEnvironment"`
 	HTTPServer  *HTTPServer `mapstructure:"httpServer"`
+	ScyllaDB    *ScyllaDB   `mapstructure:"scyllaDB"`
 }
 
 // HTTPServer holds the configuration for the HTTP server.
 type HTTPServer struct {
-	Host string `mapstructure:"httpHost"`
-	Port string `mapstructure:"httpPort"`
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
+}
+
+// ScyllaDB holds the configuration for the ScyllaDB.
+type ScyllaDB struct {
+	Hosts    []string `mapstructure:"hosts"`
+	Port     string   `mapstructure:"port"`
+	Keyspace string   `mapstructure:"keyspace"`
+	Username string   `mapstructure:"username"`
+	Password string   `mapstructure:"password"`
 }
 
 // New returns the application-wide configuration.
@@ -29,7 +39,6 @@ func New() (*App, error) {
 	viper.SetConfigType("yaml")
 
 	var cfg App
-
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
