@@ -11,10 +11,11 @@ import (
 
 	"github.com/Salam4nder/chat/internal/chat"
 	"github.com/Salam4nder/chat/internal/config"
-	"github.com/Salam4nder/chat/internal/http"
-
+	internalHTTP "github.com/Salam4nder/chat/internal/http"
+	"github.com/gocql/gocql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/scylladb/gocqlx/v2"
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, os.Kill, syscall.SIGTERM)
+
 	config, err := config.New()
 	exitOnError(err)
 	go config.Watch()
@@ -43,14 +45,20 @@ func main() {
 	}
 	log.Info().Str("service", config.ServiceName).Send()
 
+	cluster := gocql.NewCluster(config.ScyllaDB.Hosts...)
+
+	session, err := gocqlx.WrapSession(cluster.CreateSession())
+	exitOnError(err)
+	defer session.Close()
+
 	chat.Rooms = make(map[string]*chat.Room)
 
-	server := http.New().WithOptions(
-		http.WithAddr(config.HTTPServer.Addr()),
-		http.WithHandler(nil),
-		http.WithTimeout(ReadTimeout, WriteTimeout),
+	httpServer := internalHTTP.New().WithOptions(
+		internalHTTP.WithAddr(config.HTTPServer.Addr()),
+		internalHTTP.WithHandler(nil),
+		internalHTTP.WithTimeout(ReadTimeout, WriteTimeout),
 	)
-	http.InitRoutes()
+	internalHTTP.InitRoutes()
 
 	go func() {
 		if err := httpServer.Serve(); err != nil {
@@ -58,13 +66,18 @@ func main() {
 				exitOnError(err)
 			}
 		}
+	}()
+
 	<-sigCh
 	log.Info().Msg("main: starting shutdown...")
+
 	if err := httpServer.GracefulShutdown(context.Background()); err != nil {
 		log.Error().Err(err).Msg("main: failed to shutdown http server")
 		os.Exit(1)
 	}
+
 	log.Info().Msg("main: cleanup finished")
+
 	os.Exit(0)
 }
 
