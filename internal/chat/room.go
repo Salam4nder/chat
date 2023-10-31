@@ -61,9 +61,6 @@ func (x *Room) Run() {
 			for session := range x.Sessions {
 				session.In <- message
 			}
-
-		default:
-			// do nothing?
 		}
 	}
 }
