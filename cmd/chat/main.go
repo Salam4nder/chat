@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Salam4nder/chat/internal/chat"
@@ -25,6 +30,8 @@ const (
 )
 
 func main() {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, os.Kill, syscall.SIGTERM)
 	config, err := config.New()
 	exitOnError(err)
 	go config.Watch()
@@ -45,14 +52,25 @@ func main() {
 	)
 	http.InitRoutes()
 
-	if err := server.Serve(); err != nil {
-		exitOnError(err)
+	go func() {
+		if err := httpServer.Serve(); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				exitOnError(err)
+			}
+		}
+	<-sigCh
+	log.Info().Msg("main: starting shutdown...")
+	if err := httpServer.GracefulShutdown(context.Background()); err != nil {
+		log.Error().Err(err).Msg("main: failed to shutdown http server")
+		os.Exit(1)
 	}
+	log.Info().Msg("main: cleanup finished")
+	os.Exit(0)
 }
 
 func exitOnError(err error) {
 	if err != nil {
-		log.Error().Err(err).Msg("main: failed to start session")
+		log.Error().Err(err).Msg("main: failed to start service")
 		os.Exit(1)
 	}
 }
