@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -42,6 +43,24 @@ func (x *Server) Serve() error {
 	return x.http.ListenAndServe()
 }
 
+// Ping checks the health of the server.
+// The different statuses are:
+// - Starting (when the server is starting)
+// - Healthy (when the server is ready to accept requests)
+// - Unhealthy (when the server is not ready to accept requests)
+func (x *Server) Ping() {
+	x.health.Status = "Healthy"
+	x.health.Timestamp = time.Now().Format(time.RFC3339)
+
+	log.Info().Msgf("Health: %s", x.health.Status)
+	log.Info().Msgf("Timestamp: %s", x.health.Timestamp)
+}
+
+// GracefulShutdown gracefully shuts down the HTTP server.
+func (x *Server) GracefulShutdown(ctx context.Context) error {
+	return x.http.Shutdown(ctx)
+}
+
 // WithOptions configures the HTTP server with the provided options.
 func (x *Server) WithOptions(opts ...Option) *Server {
 	for _, opt := range opts {
@@ -78,19 +97,4 @@ func WithServiceName(name string) Option {
 	return func(x *Server) {
 		x.health.ServiceName = name
 	}
-}
-
-// Ping checks the health of the server.
-// The different statuses are:
-// - Starting (when the server is starting)
-// - Healthy (when the server is ready to accept requests)
-// - Unhealthy (when the server is not ready to accept requests)
-// - Stopping (when the server is shutting down)
-// - Stopped (when the server is stopped)
-func (x *Server) Ping() {
-	x.health.Status = "Healthy"
-	x.health.Timestamp = time.Now().Format(time.RFC3339)
-
-	log.Info().Msgf("Health: %s", x.health.Status)
-	log.Info().Msgf("Timestamp: %s", x.health.Timestamp)
 }
