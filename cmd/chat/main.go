@@ -32,7 +32,7 @@ const (
 
 func main() {
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	config, err := config.New()
 	exitOnError(err)
