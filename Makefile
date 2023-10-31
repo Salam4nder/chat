@@ -1,4 +1,4 @@
-.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint
+.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint scylla
 test: 
 	go test -v ./...
 
@@ -7,6 +7,9 @@ run:
 
 docker:
 	docker build -t chat .
+
+scylla:
+	docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
 
 up:
 	docker-compose up -d
