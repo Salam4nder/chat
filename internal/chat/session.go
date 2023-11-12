@@ -1,10 +1,9 @@
 package chat
 
 import (
-	"log"
-
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 // Session is a single chatting session in a room.
@@ -46,8 +45,12 @@ func (x *Session) readPump() {
 	for {
 		messageType, message, err := x.Conn.ReadMessage()
 		if err != nil {
-			// Handle this better.
-			log.Println("Error reading message:", err)
+			// handle this better
+			if err.Error() == "websocket: close 1000 (normal)" {
+				log.Info().Msg("chat: close message received")
+				break
+			}
+			log.Error().Err(err).Msg("chat: reading message")
 			continue
 		}
 
@@ -65,8 +68,7 @@ func (x *Session) writePump() {
 	for message := range x.In {
 		err := x.Conn.WriteMessage(int(message.Type), message.Body)
 		if err != nil {
-			// Handle this better.
-			log.Println("Error writing message:", err)
+			log.Error().Err(err).Msg("chat: writing message")
 			continue
 		}
 	}
