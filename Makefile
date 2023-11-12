@@ -1,15 +1,21 @@
-.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint scylla
+.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint scylla run-client migrate
 test: 
 	go test -v ./...
 
 run:
 	go run cmd/chat/main.go
 
+run-client:
+	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36
+	
 docker:
 	docker build -t chat .
 
 scylla:
 	docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
+
+migrate:
+	go run cmd/migrate/main.go
 
 up:
 	docker-compose up -d
