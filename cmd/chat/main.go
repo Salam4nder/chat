@@ -12,10 +12,9 @@ import (
 	"github.com/Salam4nder/chat/internal/chat"
 	"github.com/Salam4nder/chat/internal/config"
 	internalHTTP "github.com/Salam4nder/chat/internal/http"
-	"github.com/gocql/gocql"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/scylladb/gocqlx/v2"
 )
 
 const (
@@ -44,12 +43,6 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 	log.Info().Str("service", config.ServiceName).Send()
-
-	cluster := gocql.NewCluster(config.ScyllaDB.Hosts...)
-
-	session, err := gocqlx.WrapSession(cluster.CreateSession())
-	exitOnError(err)
-	defer session.Close()
 
 	chat.Rooms = make(map[string]*chat.Room)
 
