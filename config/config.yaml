@@ -4,9 +4,12 @@ httpServer:
   host: "0.0.0.0"
   port: "8080"
 scylladb:
+  namespace: "chat"
   hosts:
     - "127.0.0.1"
   port: "9042"
-  keyspace: "chat-keyspace"
+  keyspaces: 
+    - "message"
   username: "chat-user"
   password: "chat-password"
+  replicationFactor: 3
