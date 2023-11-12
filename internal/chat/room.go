@@ -52,8 +52,11 @@ func (x *Room) Run() {
 			log.Info().Msgf("chat: user joined room %s", x.ID.String())
 
 		case session := <-x.Leave:
+			close(session.In)
 			session.Conn.Close()
+			x.Lock()
 			delete(x.Sessions, session)
+			x.Unlock()
 
 			log.Info().Msgf("chat: user left room %s", x.ID.String())
 
