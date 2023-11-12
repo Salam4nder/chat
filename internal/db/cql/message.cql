@@ -1,6 +1,3 @@
-CREATE KEYSPACE message WITH replication =
-  {‘class’: ‘SimpleStrategy’, ‘replication_factor’ : 3};
-
 CREATE TYPE message.message (
   id uuid,
   type text,
