@@ -1,11 +1,11 @@
-.PHONY: help test run docker up down logs logs-chat logs-db evans proto lint scylla run-client migrate
+.PHONY: help test server docker up down logs logs-chat logs-db evans proto lint scylla client migrate
 test: 
 	go test -v ./...
 
-run:
+server:
 	go run cmd/chat/main.go
 
-run-client:
+client:
 	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36
 	
 docker:
