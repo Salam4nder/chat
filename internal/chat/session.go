@@ -1,12 +1,14 @@
 package chat
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )
 
-// Session is a single chatting session in a room.
+// Session is a single client session in a room.
 type Session struct {
 	ID     uuid.UUID
 	Active bool
@@ -38,6 +40,7 @@ func (x *Session) Read() {
 
 func (x *Session) readPump() {
 	defer func() {
+		x.Active = false
 		x.Room.Leave <- x
 		x.Conn.Close()
 	}()
@@ -45,19 +48,18 @@ func (x *Session) readPump() {
 	for {
 		messageType, message, err := x.Conn.ReadMessage()
 		if err != nil {
-			// handle this better
-			if err.Error() == "websocket: close 1000 (normal)" {
-				log.Info().Msg("chat: close message received")
+			if err, ok := err.(*websocket.CloseError); ok {
+				log.Info().Msgf("chat: close message received, code: %d, text: %s", err.Code, err.Text)
 				break
 			}
-			log.Error().Err(err).Msg("chat: reading message")
-			continue
 		}
 
 		x.Room.Broadcast <- Message{
-			Type:      MessageType(messageType),
+			Type:      messageType,
 			SessionID: x.ID,
 			Body:      message,
+			Author:    x.ID.String(),
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
 		}
 	}
 }
