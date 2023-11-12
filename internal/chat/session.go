@@ -19,6 +19,10 @@ type Session struct {
 
 // NewSession returns a new session.
 func NewSession(id uuid.UUID, room *Room, conn *websocket.Conn) *Session {
+	if id == uuid.Nil {
+		id = uuid.New()
+	}
+
 	return &Session{
 		ID:     id,
 		Active: true,
@@ -42,7 +46,6 @@ func (x *Session) readPump() {
 	defer func() {
 		x.Active = false
 		x.Room.Leave <- x
-		x.Conn.Close()
 	}()
 
 	for {
@@ -68,7 +71,7 @@ func (x *Session) writePump() {
 	defer x.Conn.Close()
 
 	for message := range x.In {
-		err := x.Conn.WriteMessage(int(message.Type), message.Body)
+		err := x.Conn.WriteMessage(message.Type, message.Body)
 		if err != nil {
 			log.Error().Err(err).Msg("chat: writing message")
 			continue
