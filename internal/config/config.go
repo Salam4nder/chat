@@ -24,11 +24,13 @@ type HTTPServer struct {
 
 // ScyllaDB holds the configuration for the ScyllaDB.
 type ScyllaDB struct {
-	Hosts    []string `mapstructure:"hosts"`
-	Port     string   `mapstructure:"port"`
-	Keyspace string   `mapstructure:"keyspace"`
-	Username string   `mapstructure:"username"`
-	Password string   `mapstructure:"password"`
+	Hosts             []string `mapstructure:"hosts"`
+	Port              string   `mapstructure:"port"`
+	Namespace         string   `mapstructure:"namespace"`
+	Keyspaces         []string `mapstructure:"keyspaces"`
+	Username          string   `mapstructure:"username"`
+	Password          string   `mapstructure:"password"`
+	ReplicationFactor int      `mapstructure:"replicationFactor"`
 }
 
 // New returns the application-wide configuration.
