@@ -12,7 +12,7 @@ var Rooms map[string]*Room
 
 type empty struct{}
 
-// Room refines a chat room.
+// Room defines a concurrent-safe chat room.
 type Room struct {
 	sync.Mutex
 
@@ -40,7 +40,8 @@ func NewRoom(id uuid.UUID) *Room {
 	}
 }
 
-// Run runs the room.
+// Run runs the main chat room engine.
+// It will handle joins, leaves and room broadcasts.
 func (x *Room) Run() {
 	for {
 		select {
