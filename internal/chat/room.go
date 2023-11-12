@@ -1,10 +1,10 @@
 package chat
 
 import (
-	"log"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 // Rooms is the main chat room registry.
@@ -49,18 +49,20 @@ func (x *Room) Run() {
 			x.Sessions[session] = empty{}
 			x.Unlock()
 
-			log.Println("User joined room:", x.ID)
+			log.Info().Msgf("chat: user joined room %s", x.ID.String())
 
 		case session := <-x.Leave:
 			session.Conn.Close()
 			delete(x.Sessions, session)
 
-			log.Println("User left room:", x.ID)
+			log.Info().Msgf("chat: user left room %s", x.ID.String())
 
 		case message := <-x.Broadcast:
 			for session := range x.Sessions {
 				session.In <- message
 			}
+
+			log.Info().Msgf("chat: %s broadcasted to room %s", string(message.Body), x.ID.String())
 		}
 	}
 }
