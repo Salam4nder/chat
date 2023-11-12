@@ -50,6 +50,4 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	go sess.Read()
 	go sess.Write()
 	room.Join <- sess
-
-	return
 }
