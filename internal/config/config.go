@@ -36,7 +36,7 @@ type ScyllaDB struct {
 // New returns the application-wide configuration.
 func New() (*App, error) {
 	viper.SetConfigName("config.yaml")
-	viper.AddConfigPath("./config")
+	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 	viper.SetConfigType("yaml")
 
