@@ -25,7 +25,6 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryValues := r.URL.Query()
-
 	roomID, err := uuid.Parse(queryValues.Get("roomID"))
 	if err != nil {
 		log.Error().Err(err).Msg("http: failed to parse connection")
@@ -46,8 +45,9 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	room := chat.NewRoom(roomID)
 	chat.Rooms[roomID.String()] = room
 	go room.Run()
-	sess := chat.NewSession(uuid.New(), chat.Rooms[roomID.String()], conn)
-	go sess.Read()
-	go sess.Write()
-	room.Join <- sess
+
+	session := chat.NewSession(uuid.New(), chat.Rooms[roomID.String()], conn)
+	go session.Read()
+	go session.Write()
+	room.Join <- session
 }
