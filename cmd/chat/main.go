@@ -62,7 +62,7 @@ func main() {
 	}()
 
 	<-sigCh
-	log.Info().Msg("main: starting shutdown...")
+	log.Info().Msg("main: starting graceful shutdown...")
 
 	if err := httpServer.GracefulShutdown(context.Background()); err != nil {
 		log.Error().Err(err).Msg("main: failed to shutdown http server")
