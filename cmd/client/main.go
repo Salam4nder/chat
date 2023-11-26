@@ -82,7 +82,7 @@ func main() {
 
 		if string(buffer[:n]) == ":quit\n" {
 			interrupt <- os.Interrupt
-			os.Exit(0)
+			break
 		}
 
 		inputStr <- string(buffer[:n])
