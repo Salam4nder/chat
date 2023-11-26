@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -51,8 +52,9 @@ func (x *Session) readPump() {
 	for {
 		messageType, message, err := x.Conn.ReadMessage()
 		if err != nil {
-			if err, ok := err.(*websocket.CloseError); ok {
-				log.Info().Msgf("chat: close message received, code: %d, text: %s", err.Code, err.Text)
+			var closeErr *websocket.CloseError
+			if errors.As(err, &closeErr) {
+				log.Info().Msgf("chat: close message received, code: %d, text: %s", closeErr.Code, closeErr.Text)
 				break
 			}
 		}
