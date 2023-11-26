@@ -47,7 +47,7 @@ func (x *Server) Serve() error {
 // The different statuses are:
 // - Starting (when the server is starting)
 // - Healthy (when the server is ready to accept requests)
-// - Unhealthy (when the server is not ready to accept requests)
+// - Unhealthy (when the server is not ready to accept requests).
 func (x *Server) Ping() {
 	x.health.Status = "Healthy"
 	x.health.Timestamp = time.Now().Format(time.RFC3339)

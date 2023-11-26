@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/Salam4nder/chat/internal/chat"
-
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
