@@ -1,0 +1,7 @@
+version: '3.9'
+
+services:
+  scylla:
+    image: scylladb/scylla:latest 
+    ports:
+      - 9042:9042
