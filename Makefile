@@ -1,4 +1,4 @@
-.PHONY: help test server docker up down logs logs-chat logs-db evans proto lint scylla client migrate
+.PHONY: help test server docker up down logs logs-chat logs-db evans proto lint scylla client migrate test-db test-db/down test-db/run
 test: 
 	go test -v ./...
 
@@ -13,6 +13,16 @@ docker:
 
 scylla:
 	docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
+
+test-db:
+	docker compose -f internal/db/compose.yaml up -d --wait
+	bash -c "trap '$(MAKE) test-db/down' EXIT; $(MAKE) test-db/run"
+
+test-db/down:
+	docker compose -f internal/db/compose.yaml down -v
+
+test-db/run:
+	go test -tags testdb -v --coverprofile=coverage.out -coverpkg ./... ./internal/db/repository
 
 migrate:
 	go run cmd/migrate/main.go
