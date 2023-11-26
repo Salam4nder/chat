@@ -98,7 +98,7 @@ func registerLoggingCallbacks() error {
 		_ migrate.CallbackEvent,
 		name string,
 	) error {
-		log.Info().Msgf("found migration file %s", name)
+		log.Info().Msgf("migrate: found migration file %s", name)
 		return nil
 	}
 
@@ -108,7 +108,7 @@ func registerLoggingCallbacks() error {
 		_ migrate.CallbackEvent,
 		name string,
 	) error {
-		log.Info().Msgf("%s successfully migrated", name)
+		log.Info().Msgf("migrate: %s successfully migrated", name)
 		return nil
 	}
 
