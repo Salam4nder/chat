@@ -7,7 +7,6 @@ import (
 
 	"github.com/Salam4nder/chat/internal/config"
 	"github.com/Salam4nder/chat/internal/db/cql/migrate"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
