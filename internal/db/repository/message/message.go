@@ -11,7 +11,7 @@ import (
 var (
 	// ErrMessageNotFound is returned when a message is not found in the database.
 	ErrMessageNotFound            = errors.New("repository: message not found")
-	_                  Repository = (*repository)(nil)
+	_                  Repository = (*RepositoryImpl)(nil)
 )
 
 // Response defines a message model response from the database.
@@ -32,13 +32,14 @@ type Repository interface {
 	Read(id gocql.UUID) (*Response, error)
 }
 
-type repository struct {
+// RepositoryImpl implements the Repository interface.
+type RepositoryImpl struct {
 	session *gocql.Session
 }
 
 // NewRepository creates a new message repository.
-func NewRepository(session *gocql.Session) *repository {
-	return &repository{session: session}
+func NewRepository(session *gocql.Session) *RepositoryImpl {
+	return &RepositoryImpl{session: session}
 }
 
 // CreateParams defines the parameters to create a new message.
@@ -51,7 +52,7 @@ type CreateParams struct {
 }
 
 // Create a new message in the database and return it.
-func (x *repository) Create(params CreateParams) (*Response, error) {
+func (x *RepositoryImpl) Create(params CreateParams) (*Response, error) {
 	query := `INSERT INTO messages (id, type, data, sender, recipient, timestamp) 
               VALUES (?, ?, ?, ?, ?, ?)`
 
@@ -74,7 +75,7 @@ func (x *repository) Create(params CreateParams) (*Response, error) {
 }
 
 // Read a message from the database and return it.
-func (x *repository) Read(id gocql.UUID) (*Response, error) {
+func (x *RepositoryImpl) Read(id gocql.UUID) (*Response, error) {
 	query := `SELECT id, type, data, sender, recipient, timestamp FROM messages WHERE id = ?`
 
 	var message Response
