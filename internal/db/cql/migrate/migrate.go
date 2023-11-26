@@ -8,7 +8,6 @@ import (
 	"io/fs"
 
 	"github.com/Salam4nder/chat/internal/db/cql"
-
 	"github.com/gocql/gocql"
 	"github.com/rs/zerolog/log"
 	"github.com/scylladb/gocqlx/v2"
