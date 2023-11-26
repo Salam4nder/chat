@@ -12,7 +12,6 @@ import (
 	"github.com/Salam4nder/chat/internal/chat"
 	"github.com/Salam4nder/chat/internal/config"
 	internalHTTP "github.com/Salam4nder/chat/internal/http"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
