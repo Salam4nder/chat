@@ -9,11 +9,9 @@ import (
 )
 
 const (
-	StatusHealthy = "Healthy"
-
+	StatusHealthy   = "Healthy"
 	StatusUnhealthy = "Unhealthy"
-
-	StatusStarting = "Starting"
+	StatusStarting  = "Starting"
 )
 
 type Status struct {
@@ -37,13 +35,6 @@ func NewHandler() *Handler {
 func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 	status := x.check()
 
-	bytes, err := json.Marshal(status)
-	if err != nil {
-		log.Error().Err(err).Msg("health: error marshalling health")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	switch status.Health {
@@ -55,9 +46,10 @@ func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 
-	_, err = w.Write(bytes)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(status); err != nil {
 		log.Error().Err(err).Msg("health: error writing response")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
