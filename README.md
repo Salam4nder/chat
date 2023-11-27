@@ -1,6 +1,10 @@
 # chat
 Chat application using ScyllaDB and Kafka.
 
+## Testing
+Run tests with `make test` or with `go test ./...`. Tests that need a database connection will be excluded from these commands.
+To run the database tests, run `make test-db`. 
+
 ## Migrations
 The `cmd/migrate` tool provides a helper for CQL migrations, creating the necessary keyspaces as defined in the `config.yaml` file and executing migration files found in the `db/cql` directory.
 
