@@ -34,7 +34,7 @@ func NewHandler() *Handler {
 	}}
 }
 
-func (x *Handler) Health(w http.ResponseWriter, r *http.Request) {
+func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 	status := x.check()
 
 	bytes, err := json.Marshal(status)
