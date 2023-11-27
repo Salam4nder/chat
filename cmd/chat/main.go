@@ -11,7 +11,8 @@ import (
 
 	"github.com/Salam4nder/chat/internal/chat"
 	"github.com/Salam4nder/chat/internal/config"
-	internalHTTP "github.com/Salam4nder/chat/internal/http"
+	"github.com/Salam4nder/chat/internal/http/handler/health"
+	"github.com/Salam4nder/chat/internal/http/handler/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -45,15 +46,21 @@ func main() {
 
 	chat.Rooms = make(map[string]*chat.Room)
 
-	httpServer := internalHTTP.New().WithOptions(
-		internalHTTP.WithAddr(config.HTTPServer.Addr()),
-		internalHTTP.WithHandler(nil),
-		internalHTTP.WithTimeout(ReadTimeout, WriteTimeout),
-	)
-	internalHTTP.InitRoutes()
+	server := http.Server{
+		Addr:         config.HTTPServer.Addr(),
+		Handler:      nil,
+		ReadTimeout:  ReadTimeout,
+		WriteTimeout: WriteTimeout,
+	}
+
+	healthHandler := health.NewHandler()
+
+	http.HandleFunc("/health", healthHandler.Health)
+	http.HandleFunc("/chat", websocket.HandleWS)
 
 	go func() {
-		if err := httpServer.Serve(); err != nil {
+        log.Info().Str("addr", config.HTTPServer.Addr()).Msg("main: serving http server...")
+		if err := server.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				exitOnError(err)
 			}
@@ -63,7 +70,7 @@ func main() {
 	<-sigCh
 	log.Info().Msg("main: starting graceful shutdown...")
 
-	if err := httpServer.GracefulShutdown(context.Background()); err != nil {
+	if err := server.Shutdown(context.Background()); err != nil {
 		log.Error().Err(err).Msg("main: failed to shutdown http server")
 		os.Exit(1)
 	}
