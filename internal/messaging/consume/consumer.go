@@ -11,7 +11,7 @@ var _ Consumer = (*KafkaConsumer)(nil)
 
 // Consumer is an abstraction for consuming messages from a topic.
 type Consumer interface {
-	Consume(ctx context.Context, topic string, partition int, offset int64) (chan *kafka.Message, error)
+	Consume(ctx context.Context, offset int64) (chan *kafka.Message, error)
 }
 
 // KafkaConsumer implements the Consumer interface.
@@ -20,16 +20,21 @@ type KafkaConsumer struct {
 }
 
 // NewKafkaConsumer creates a new KafkaConsumer.
-func NewKafkaConsumer(brokers []string, groupID string) *KafkaConsumer {
+func NewKafkaConsumer(brokers []string, topic string) *KafkaConsumer {
 	return &KafkaConsumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
-			Brokers: brokers,
-			GroupID: groupID,
+			Brokers:   brokers,
+			Topic:     topic,
+			Partition: 0,
+			MinBytes:  10e6, // 10MB
 		}),
 	}
 }
 
-func (x *KafkaConsumer) Consume(ctx context.Context, topic string, partition int, offset int64) (chan *kafka.Message, error) {
+func (x *KafkaConsumer) Consume(
+	ctx context.Context,
+	offset int64,
+) (chan *kafka.Message, error) {
 	if err := x.reader.SetOffset(offset); err != nil {
 		return nil, err
 	}
