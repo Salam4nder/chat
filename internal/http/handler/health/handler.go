@@ -38,10 +38,10 @@ func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	switch status.Health {
-	case StatusStarting:
-		w.WriteHeader(http.StatusServiceUnavailable)
 	case StatusHealthy:
 		w.WriteHeader(http.StatusOK)
+	case StatusStarting:
+		w.WriteHeader(http.StatusServiceUnavailable)
 	case StatusUnhealthy:
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
