@@ -32,7 +32,14 @@ func NewKafkaProducer(brokers []string, topic string) *KafkaProducer {
 	}
 }
 
-func (x *KafkaProducer) Produce(ctx context.Context, topic string, partition int, key, value []byte) error {
+// Produce produces a message to the given topic and partition.
+func (x *KafkaProducer) Produce(
+	ctx context.Context,
+	topic string,
+	partition int,
+	key,
+	value []byte,
+) error {
 	return x.writer.WriteMessages(ctx, kafka.Message{
 		Topic:     topic,
 		Partition: partition,
