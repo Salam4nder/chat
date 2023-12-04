@@ -59,7 +59,10 @@ func main() {
 	http.HandleFunc("/chat", websocket.HandleWS)
 
 	go func() {
-		log.Info().Str("addr", config.HTTPServer.Addr()).Msg("main: serving http server...")
+		log.Info().
+			Str("addr", config.HTTPServer.Addr()).
+			Msg("main: serving http server...")
+
 		if err := server.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				exitOnError(err)
