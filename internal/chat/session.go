@@ -54,13 +54,19 @@ func (x *Session) readPump() {
 		if err != nil {
 			var closeErr *websocket.CloseError
 			if errors.As(err, &closeErr) {
-				log.Info().Msgf("chat: close message received, code: %d, text: %s", closeErr.Code, closeErr.Text)
+				log.Info().
+					Msgf(
+						"chat: close message received, code: %d, text: %s",
+						closeErr.Code,
+						closeErr.Text,
+					)
 				break
 			}
 		}
 
 		x.Room.Broadcast <- Message{
 			Type:      messageType,
+			RoomID:    x.Room.ID,
 			SessionID: x.ID,
 			Body:      message,
 			Author:    x.ID.String(),

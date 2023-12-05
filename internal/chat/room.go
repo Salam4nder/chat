@@ -66,7 +66,12 @@ func (x *Room) Run() {
 				session.In <- message
 			}
 
-			log.Info().Msgf("chat: %s broadcasted to room %s", string(message.Body), x.ID.String())
+			log.Info().
+				Msgf(
+					"chat: %s broadcasted to room %s",
+					string(message.Body),
+					x.ID.String(),
+				)
 		}
 	}
 }
