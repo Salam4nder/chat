@@ -1,6 +1,6 @@
 //go:build testdb
 
-package repository
+package message
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Salam4nder/chat/internal/config"
-	"github.com/Salam4nder/chat/internal/db/cql/migrate"
+	"github.com/Salam4nder/chat/internal/db/migrate"
 	"github.com/gocql/gocql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -22,6 +22,8 @@ const (
 	waitTimeout    = 30 * time.Second
 	migrateTimeout = 15 * time.Second
 )
+
+var TestScyllaConn *ScyllaKeyspace
 
 func TestMain(m *testing.M) {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -37,13 +39,14 @@ func TestMain(m *testing.M) {
 	}
 
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), waitTimeout)
+	migrateCtx, migrateCancel := context.WithTimeout(context.Background(), migrateTimeout)
+
 	if err := waitForScylla(waitCtx, sigCh, config.Hosts...); err != nil {
 		log.Warn().Err(err).Send()
 		waitCancel()
 		os.Exit(1)
 	}
 
-	migrateCtx, migrateCancel := context.WithTimeout(context.Background(), migrateTimeout)
 	if err := migrate.Run(
 		migrateCtx,
 		config.Hosts,
@@ -55,6 +58,18 @@ func TestMain(m *testing.M) {
 		migrateCancel()
 		os.Exit(1)
 	}
+
+	cluster := gocql.NewCluster(config.Hosts...)
+	cluster.Consistency = gocql.Consistency(1)
+	cluster.Keyspace = config.Keyspaces[0]
+	session, err := cluster.CreateSession()
+	if err != nil {
+		log.Error().Err(err).Msg("repository: failed to create session")
+		os.Exit(1)
+	}
+	defer session.Close()
+
+	TestScyllaConn = NewKeyspace(session)
 
 	waitCancel()
 	migrateCancel()
