@@ -58,7 +58,6 @@ func main() {
 	cluster.Keyspace = config.ScyllaDB.Keyspaces[0]
 	session, err := cluster.CreateSession()
 	exitOnError(err)
-	defer session.Close()
 
 	healthHandler := health.NewHandler(session)
 
