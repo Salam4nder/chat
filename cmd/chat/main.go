@@ -13,6 +13,7 @@ import (
 	"github.com/Salam4nder/chat/internal/config"
 	"github.com/Salam4nder/chat/internal/http/handler/health"
 	"github.com/Salam4nder/chat/internal/http/handler/websocket"
+	"github.com/gocql/gocql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -53,7 +54,13 @@ func main() {
 		WriteTimeout: WriteTimeout,
 	}
 
-	healthHandler := health.NewHandler()
+	cluster := gocql.NewCluster(config.ScyllaDB.Hosts...)
+	cluster.Keyspace = config.ScyllaDB.Keyspaces[0]
+	session, err := cluster.CreateSession()
+	exitOnError(err)
+	defer session.Close()
+
+	healthHandler := health.NewHandler(session)
 
 	http.HandleFunc("/health", healthHandler.Health)
 	http.HandleFunc("/chat", websocket.HandleWS)
@@ -72,6 +79,8 @@ func main() {
 
 	<-sigCh
 	log.Info().Msg("main: starting graceful shutdown...")
+
+	session.Close()
 
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Error().Err(err).Msg("main: failed to shutdown http server")
