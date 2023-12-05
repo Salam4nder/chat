@@ -22,7 +22,7 @@ test-db/down:
 	docker compose -f internal/db/compose.yaml down -v
 
 test-db/run:
-	go test -tags testdb -v --coverprofile=coverage.out -coverpkg ./... ./internal/db/repository
+	go test -tags testdb -v --coverprofile=coverage.out -coverpkg ./... ./internal/db/keyspace/...
 
 migrate:
 	go run cmd/migrate/main.go
