@@ -89,10 +89,9 @@ func (x *ScyllaKeyspace) CreateMessageByRoom(
 
 // ReadMessagesByRoom reads all messages from a room based on a roomID.
 func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Model, error) {
-	query := `
-    SELECT id, data, type, sender, room_id, time 
-    FROM message.message_by_room 
-    WHERE room_id = ?`
+	query := `SELECT id, data, type, sender, room_id, time 
+              FROM message.message_by_room 
+              WHERE room_id = ?`
 
 	messages := make([]Model, 0)
 
@@ -121,7 +120,7 @@ func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) 
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Error().Err(err).Msg("message: failed to scan message")
+		log.Error().Err(err).Msg("message: scanner had errors")
 		return nil, err
 	}
 
