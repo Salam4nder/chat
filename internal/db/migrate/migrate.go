@@ -1,5 +1,4 @@
-// Package migrate is a helper package that provides functions for creating keyspaces
-// and registering callbacks for logging.
+// Package migrate is a helper package that provides CQL migrations.
 package migrate
 
 import (
