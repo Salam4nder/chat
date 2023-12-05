@@ -8,6 +8,7 @@ import (
 type Message struct {
 	ID        uuid.UUID
 	Type      int
+	RoomID    uuid.UUID
 	SessionID uuid.UUID
 	Body      []byte
 	Author    string
