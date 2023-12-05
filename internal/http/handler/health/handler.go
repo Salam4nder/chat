@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gocql/gocql"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,15 +22,19 @@ type Status struct {
 }
 
 type Handler struct {
-	status Status
+	status     Status
+	scyllaConn *gocql.Session
 }
 
-func NewHandler() *Handler {
-	return &Handler{status: Status{
-		Health:      "Starting",
-		Timestamp:   time.Now().Format(time.RFC3339),
-		ServiceName: "chat",
-	}}
+func NewHandler(scyllaConn *gocql.Session) *Handler {
+	return &Handler{
+		status: Status{
+			Health:      "Starting",
+			Timestamp:   time.Now().Format(time.RFC3339),
+			ServiceName: "chat",
+		},
+		scyllaConn: scyllaConn,
+	}
 }
 
 func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
@@ -59,10 +64,13 @@ func (x *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 // - Healthy (when the server is ready to accept requests)
 // - Unhealthy (when the server is not ready to accept requests).
 func (x *Handler) check() Status {
-	// TODO: ping db.
 	x.status.Health = StatusHealthy
-	x.status.Timestamp = time.Now().Format(time.RFC3339)
 
+	if x.scyllaConn == nil || x.scyllaConn.Closed() {
+		x.status.Health = StatusUnhealthy
+	}
+
+	x.status.Timestamp = time.Now().Format(time.RFC3339)
 	log.Info().
 		Str("Health: %s", x.status.Health).
 		Str("Timestamp: %s", x.status.Timestamp).
