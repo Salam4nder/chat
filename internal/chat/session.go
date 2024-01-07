@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Salam4nder/chat/internal/db/keyspace/message"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
@@ -16,20 +17,31 @@ type Session struct {
 	Room   *Room
 	Conn   *websocket.Conn
 	In     chan Message
+	// FriendlyName is the displayed name of the connected user.
+	FriendlyName string
+	UserID       uuid.UUID
+
+	MessageKeyspace message.Keyspace
 }
 
 // NewSession returns a new session.
-func NewSession(id uuid.UUID, room *Room, conn *websocket.Conn) *Session {
+func NewSession(
+	id uuid.UUID,
+	room *Room,
+	conn *websocket.Conn,
+	friendlyName string,
+) *Session {
 	if id == uuid.Nil {
 		id = uuid.New()
 	}
 
 	return &Session{
-		ID:     id,
-		Active: true,
-		Room:   room,
-		Conn:   conn,
-		In:     make(chan Message),
+		ID:           id,
+		Active:       true,
+		Room:         room,
+		Conn:         conn,
+		In:           make(chan Message),
+		FriendlyName: friendlyName,
 	}
 }
 
@@ -50,7 +62,7 @@ func (x *Session) readPump() {
 	}()
 
 	for {
-		messageType, message, err := x.Conn.ReadMessage()
+		mType, m, err := x.Conn.ReadMessage()
 		if err != nil {
 			var closeErr *websocket.CloseError
 			if errors.As(err, &closeErr) {
@@ -65,11 +77,11 @@ func (x *Session) readPump() {
 		}
 
 		x.Room.Broadcast <- Message{
-			Type:      messageType,
+			Type:      mType,
 			RoomID:    x.Room.ID,
 			SessionID: x.ID,
-			Body:      message,
-			Author:    x.ID.String(),
+			Body:      m,
+			Author:    x.FriendlyName,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 		}
 	}
