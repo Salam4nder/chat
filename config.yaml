@@ -13,3 +13,9 @@ scylladb:
   username: "chat-user"
   password: "chat-password"
   replicationFactor: 3
+nats:
+  host:
+    - "nats"
+  port:
+    4222
+
