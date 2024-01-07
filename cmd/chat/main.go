@@ -127,7 +127,7 @@ func connectToScyllaWithTimeout(
 
 		case <-ctx.Done():
 			if err == nil {
-				err = fmt.Errorf("failed to connect to ScyllaDB, %v", ctx.Err())
+				err = fmt.Errorf("failed to connect to ScyllaDB, %w", ctx.Err())
 			}
 			return nil, err
 
