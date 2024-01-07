@@ -31,12 +31,12 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 			Msg("websocket: failed to parse url query for roomID")
 		return
 	}
-	chatUsername := queryVal.Get("name")
-	if chatUsername == "" {
+	username := queryVal.Get("name")
+	if username == "" {
 		log.Warn().
 			Msg("websocket: failed to parse url query for name")
 
-		chatUsername = "unknown"
+		username = "unknown"
 	}
 
 	roomIDStr := roomID.String()
@@ -45,7 +45,7 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 			uuid.New(),
 			chat.Rooms[roomIDStr],
 			conn,
-			chatUsername,
+			username,
 		)
 
 		room.Join <- session
@@ -57,14 +57,14 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	room := chat.NewRoom()
-	chat.Rooms[roomID.String()] = room
+	chat.Rooms[roomIDStr] = room
 	go room.Run()
 
 	session := chat.NewSession(
 		uuid.New(),
 		chat.Rooms[roomIDStr],
 		conn,
-		chatUsername,
+		username,
 	)
 	go session.Read()
 	go session.Write()
