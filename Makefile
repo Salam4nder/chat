@@ -6,13 +6,16 @@ server:
 	go run cmd/chat/main.go
 
 client:
-	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36
+	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36 --name=client1
 	
 docker:
 	docker build -t chat .
 
 scylla:
 	docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
+
+scylla-rm:
+	docker rm -f -v scylla
 
 test-db:
 	docker compose -f internal/db/compose.yaml up -d --wait
@@ -54,3 +57,7 @@ proto:
 
 lint:
 	golangci-lint run --fix
+
+nilaway:
+ 	#go install go.uber.org/nilaway/cmd/nilaway@latest
+	nilaway ./...
