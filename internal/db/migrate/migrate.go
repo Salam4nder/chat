@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"time"
 
 	"github.com/Salam4nder/chat/internal/db/cql"
 	"github.com/gocql/gocql"
@@ -21,6 +22,7 @@ func Run(
 	repFactor int,
 	keyspaces []string,
 ) error {
+	waitForScylla(hosts)
 	if err := createKeyspaces(hosts, nameSpace, repFactor, keyspaces); err != nil {
 		return err
 	}
@@ -124,4 +126,20 @@ func registerLoggingCallbacks() error {
 	migrate.Callback = reg.Callback
 
 	return nil
+}
+
+func waitForScylla(hosts []string) {
+	cluster := gocql.NewCluster(hosts...)
+	cluster.Consistency = gocql.Consistency(1)
+
+	maxRetries := 30
+	for i := 0; i < maxRetries; i++ {
+		session, err := gocqlx.WrapSession(cluster.CreateSession())
+		if err != nil {
+			log.Info().Msgf("migrate: waiting for Scylla, attempt %d", i)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		defer session.Close()
+	}
 }
