@@ -67,11 +67,10 @@ func (x *Room) Run() {
 			}
 
 			log.Info().
-				Msgf(
-					"chat: %s broadcasted to room %s",
-					string(message.Body),
-					x.ID.String(),
-				)
+				Str("body", string(message.Body)).
+				Str("author", message.Author).
+				Str("room", x.ID.String()).
+				Send()
 		}
 	}
 }
