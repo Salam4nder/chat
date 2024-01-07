@@ -5,6 +5,8 @@ services:
    image: chat:latest
    ports:
       - 8080:8080
+   depends_on:
+     - scylla
   scylla:
     image: scylladb/scylla:latest 
     ports:
