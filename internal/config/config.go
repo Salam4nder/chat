@@ -10,10 +10,10 @@ import (
 
 // App holds the application-wide configuration.
 type App struct {
-	ServiceName string      `mapstructure:"serviceName"`
-	Environment string      `mapstructure:"appEnvironment"`
-	HTTPServer  *HTTPServer `mapstructure:"httpServer"`
-	ScyllaDB    *ScyllaDB   `mapstructure:"scyllaDB"`
+	ServiceName string     `mapstructure:"serviceName"`
+	Environment string     `mapstructure:"appEnvironment"`
+	HTTPServer  HTTPServer `mapstructure:"httpServer"`
+	ScyllaDB    ScyllaDB   `mapstructure:"scyllaDB"`
 }
 
 // HTTPServer holds the configuration for the HTTP server.
