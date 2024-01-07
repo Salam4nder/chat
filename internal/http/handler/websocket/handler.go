@@ -19,19 +19,34 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("http: failed to upgrade connection")
+		log.Error().Err(err).Msg("websocket: failed to upgrade connection")
 		return
 	}
 
-	queryValues := r.URL.Query()
-	roomID, err := uuid.Parse(queryValues.Get("roomID"))
+	queryVal := r.URL.Query()
+	roomID, err := uuid.Parse(queryVal.Get("roomID"))
 	if err != nil {
-		log.Error().Err(err).Msg("http: failed to parse connection")
+		log.Error().
+			Err(err).
+			Msg("websocket: failed to parse url query for roomID")
 		return
 	}
+	chatUsername := queryVal.Get("name")
+	if chatUsername == "" {
+		log.Warn().
+			Msg("websocket: failed to parse url query for name")
 
-	if room, exists := chat.Rooms[roomID.String()]; exists {
-		session := chat.NewSession(uuid.New(), chat.Rooms[roomID.String()], conn)
+		chatUsername = "unknown"
+	}
+
+	roomIDStr := roomID.String()
+	if room, exists := chat.Rooms[roomIDStr]; exists {
+		session := chat.NewSession(
+			uuid.New(),
+			chat.Rooms[roomIDStr],
+			conn,
+			chatUsername,
+		)
 
 		room.Join <- session
 
@@ -45,7 +60,12 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 	chat.Rooms[roomID.String()] = room
 	go room.Run()
 
-	session := chat.NewSession(uuid.New(), chat.Rooms[roomID.String()], conn)
+	session := chat.NewSession(
+		uuid.New(),
+		chat.Rooms[roomIDStr],
+		conn,
+		chatUsername,
+	)
 	go session.Read()
 	go session.Write()
 	room.Join <- session
