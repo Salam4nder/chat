@@ -118,7 +118,7 @@ func connectToScyllaWithTimeout(
 	)
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(2 * time.Second):
 			session, err = cluster.CreateSession()
 			if session != nil {
 				return session, nil
@@ -127,8 +127,9 @@ func connectToScyllaWithTimeout(
 
 		case <-ctx.Done():
 			if err == nil {
-				return nil, fmt.Errorf("failed to connect to ScyllaDB: %w", err)
+				err = fmt.Errorf("failed to connect to ScyllaDB, %v", ctx.Err())
 			}
+			return nil, err
 
 		case <-cancelCh:
 			return nil, fmt.Errorf("failed to connect to ScyllaDB, cancel signal received")
