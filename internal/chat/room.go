@@ -14,7 +14,7 @@ type empty struct{}
 
 // Room defines a concurrent-safe chat room.
 type Room struct {
-	sync.Mutex
+	mu sync.Mutex
 
 	ID        uuid.UUID
 	Join      chan *Session
@@ -42,18 +42,18 @@ func (x *Room) Run() {
 	for {
 		select {
 		case session := <-x.Join:
-			x.Lock()
+			x.mu.Lock()
 			x.Sessions[session] = empty{}
-			x.Unlock()
+			x.mu.Unlock()
 
 			log.Info().Msgf("chat: user joined room %s", x.ID.String())
 
 		case session := <-x.Leave:
 			close(session.In)
 			session.Conn.Close()
-			x.Lock()
+			x.mu.Lock()
 			delete(x.Sessions, session)
-			x.Unlock()
+			x.mu.Unlock()
 
 			log.Info().Msgf("chat: user left room %s", x.ID.String())
 
