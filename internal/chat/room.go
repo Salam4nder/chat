@@ -25,13 +25,9 @@ type Room struct {
 }
 
 // NewRoom returns a new room.
-func NewRoom(id uuid.UUID) *Room {
-	if id == uuid.Nil {
-		id = uuid.New()
-	}
-
+func NewRoom() *Room {
 	return &Room{
-		ID:        id,
+		ID:        uuid.New(),
 		Join:      make(chan *Session),
 		Leave:     make(chan *Session),
 		Active:    true,

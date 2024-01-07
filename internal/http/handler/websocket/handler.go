@@ -56,7 +56,7 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room := chat.NewRoom(roomID)
+	room := chat.NewRoom()
 	chat.Rooms[roomID.String()] = room
 	go room.Run()
 
