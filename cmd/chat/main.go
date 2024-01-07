@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,18 +20,23 @@ import (
 )
 
 const (
-	// ReadTimeout is the maximum duration for reading the entire
+	// HTTPReadTimeout is the maximum duration for reading the entire
 	// request, including the body.
-	ReadTimeout = 10 * time.Second
-	// WriteTimeout is the maximum duration before timing out
+	HTTPReadTimeout = 10 * time.Second
+	// HTTPWriteTimeout is the maximum duration before timing out
 	// writes of the response. It is reset whenever a new
 	// request's header is read.
-	WriteTimeout = 10 * time.Second
+	HTTPWriteTimeout = 10 * time.Second
 	// EnvironmentDev is the development environment.
 	EnvironmentDev = "dev"
+	// ScyllaTimeout is the maximum duration to wait for a ScyllaDB connection.
+	ScyllaTimeout = 30 * time.Second
 )
 
 func main() {
+	// UNIX Time is faster and smaller than most timestamps
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
@@ -38,32 +44,25 @@ func main() {
 	exitOnError(err)
 	go config.Watch()
 
-	// UNIX Time is faster and smaller than most timestamps
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	if config.Environment == EnvironmentDev {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 	log.Info().Str("service", config.ServiceName).Send()
+
+	scyllaSession, err := connectToScyllaWithTimeout(config.ScyllaDB, ScyllaTimeout, sigCh)
+	exitOnError(err)
 
 	chat.Rooms = make(map[string]*chat.Room)
 
 	server := http.Server{
 		Addr:         config.HTTPServer.Addr(),
 		Handler:      nil,
-		ReadTimeout:  ReadTimeout,
-		WriteTimeout: WriteTimeout,
+		ReadTimeout:  HTTPReadTimeout,
+		WriteTimeout: HTTPWriteTimeout,
 	}
-
-	cluster := gocql.NewCluster(config.ScyllaDB.Hosts...)
-	cluster.Keyspace = config.ScyllaDB.Keyspaces[0]
-	session, err := cluster.CreateSession()
-	exitOnError(err)
-
-	healthHandler := health.NewHandler(session)
-
+	healthHandler := health.NewHandler(scyllaSession)
 	http.HandleFunc("/health", healthHandler.Health)
 	http.HandleFunc("/chat", websocket.HandleWS)
-
 	go func() {
 		log.Info().
 			Str("addr", config.HTTPServer.Addr()).
@@ -79,21 +78,60 @@ func main() {
 	<-sigCh
 	log.Info().Msg("main: starting graceful shutdown...")
 
-	session.Close()
+	scyllaSession.Close()
 
 	if err := server.Shutdown(context.Background()); err != nil {
-		log.Error().Err(err).Msg("main: failed to shutdown http server")
+		log.Error().
+			Err(err).
+			Msg("main: failed to shutdown http server")
 		os.Exit(1)
 	}
-
 	log.Info().Msg("main: cleanup finished")
-
 	os.Exit(0)
 }
 
 func exitOnError(err error) {
 	if err != nil {
-		log.Error().Err(err).Msg("main: failed to start service")
+		log.Error().
+			Err(err).
+			Msg("main: failed to start service")
 		os.Exit(1)
+	}
+}
+
+func connectToScyllaWithTimeout(
+	config config.ScyllaDB,
+	timeout time.Duration,
+	cancelCh chan os.Signal,
+) (*gocql.Session, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cluster := gocql.NewCluster(config.Hosts...)
+	cluster.Keyspace = config.Keyspaces[0]
+
+	log.Info().Msg("main: trying to connect to ScyllaDB...")
+
+	var (
+		err     error
+		session *gocql.Session
+	)
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+			session, err = cluster.CreateSession()
+			if session != nil {
+				return session, nil
+			}
+			log.Info().Msgf("main: failed attempt to connect ScyllaDB: %v, retrying", err)
+
+		case <-ctx.Done():
+			if err == nil {
+				return nil, fmt.Errorf("failed to connect to ScyllaDB: %w", err)
+			}
+
+		case <-cancelCh:
+			return nil, fmt.Errorf("failed to connect to ScyllaDB, cancel signal received")
+		}
 	}
 }
