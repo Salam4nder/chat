@@ -21,7 +21,7 @@ func NewMigrator(cluster *gocql.ClusterConfig) *Migrator {
 	return &Migrator{cluster: cluster}
 }
 
-//Run runs migrations.
+// Run runs migrations.
 func (x *Migrator) Run(ctx context.Context, keyspace string, repFactor int) error {
 	x.cluster.Keyspace = "system"
 	cqlSession, err := x.cluster.CreateSession()
