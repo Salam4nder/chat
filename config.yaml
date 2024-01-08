@@ -1,18 +1,17 @@
 serviceName: "chat"
-appEnvironment: "dev"
+environment: "dev"
 httpServer:
   host: "0.0.0.0"
   port: "8080"
 scylladb:
-  namespace: "chat"
   hosts:
     - "127.0.0.1"
   port: "9042"
-  keyspaces: 
-    - "message"
+  keyspace: "chat" 
   username: "chat-user"
   password: "chat-password"
   replicationFactor: 3
+  consistency: 1
 nats:
   host:
     - "nats"
