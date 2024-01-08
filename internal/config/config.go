@@ -11,7 +11,7 @@ import (
 // App holds the application-wide configuration.
 type App struct {
 	ServiceName string     `mapstructure:"serviceName"`
-	Environment string     `mapstructure:"appEnvironment"`
+	Environment string     `mapstructure:"environment"`
 	HTTPServer  HTTPServer `mapstructure:"httpServer"`
 	ScyllaDB    ScyllaDB   `mapstructure:"scyllaDB"`
 }
@@ -26,10 +26,10 @@ type HTTPServer struct {
 type ScyllaDB struct {
 	Hosts             []string `mapstructure:"hosts"`
 	Port              string   `mapstructure:"port"`
-	Namespace         string   `mapstructure:"namespace"`
-	Keyspaces         []string `mapstructure:"keyspaces"`
+	Keyspace          string   `mapstructure:"keyspace"`
 	Username          string   `mapstructure:"username"`
 	Password          string   `mapstructure:"password"`
+	Consistency       int      `mapstructure:"consistency"`
 	ReplicationFactor int      `mapstructure:"replicationFactor"`
 }
 
