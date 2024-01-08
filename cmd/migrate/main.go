@@ -3,42 +3,50 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Salam4nder/chat/internal/config"
+	"github.com/Salam4nder/chat/internal/db/cql"
 	"github.com/Salam4nder/chat/internal/db/migrate"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
+const timeout = 30 * time.Second
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+
 	config, err := config.New()
 	exitOnError(err)
 
-	log.Info().Msg("migration started")
+	log.Info().Msg("migrate cmd: migration started")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	cluster := cql.NewClusterConfig(config.ScyllaDB)
+	if err := cluster.PingCluster(timeout, interrupt); err != nil {
+		exitOnError(err)
+	}
 
-	if err := migrate.Run(
-		ctx,
-		config.ScyllaDB.Hosts,
-		config.ScyllaDB.Namespace,
+	if err := migrate.NewMigrator(cluster.Inner()).Run(
+		context.TODO(),
+		config.ScyllaDB.Keyspace,
 		config.ScyllaDB.ReplicationFactor,
-		config.ScyllaDB.Keyspaces,
 	); err != nil {
 		exitOnError(err)
 	}
 
-	log.Info().Msg("cmd: migration successful")
+	log.Info().Msg("migrate cmd: migration successful")
 }
 
 func exitOnError(err error) {
 	if err != nil {
-		log.Error().Err(err).Msg("cmd: failed to migrate")
+		log.Error().Err(err).Msg("migrate cmd: failed to migrate")
 		os.Exit(1)
 	}
 }
