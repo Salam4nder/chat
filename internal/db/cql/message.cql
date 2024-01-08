@@ -1,4 +1,4 @@
-CREATE TABLE message.message_by_room (
+CREATE TABLE chat.message_by_room (
   id uuid,
   data blob,
   type text,
