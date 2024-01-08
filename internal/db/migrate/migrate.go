@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"time"
 
 	"github.com/Salam4nder/chat/internal/db/cql"
 	"github.com/gocql/gocql"
@@ -14,79 +13,47 @@ import (
 	"github.com/scylladb/gocqlx/v2/migrate"
 )
 
-// Run runs migrations.
-func Run(
-	ctx context.Context,
-	hosts []string,
-	nameSpace string,
-	repFactor int,
-	keyspaces []string,
-) error {
-	waitForScylla(hosts)
-	if err := createKeyspaces(hosts, nameSpace, repFactor, keyspaces); err != nil {
-		return err
-	}
+type Migrator struct {
+	cluster *gocql.ClusterConfig
+}
 
-	cluster := gocql.NewCluster(hosts...)
-	cluster.Consistency = gocql.Consistency(1)
-	cluster.Keyspace = nameSpace
+func NewMigrator(cluster *gocql.ClusterConfig) *Migrator {
+	return &Migrator{cluster: cluster}
+}
 
-	session, err := gocqlx.WrapSession(cluster.CreateSession())
+//Run runs migrations.
+func (x *Migrator) Run(ctx context.Context, keyspace string, repFactor int) error {
+	x.cluster.Keyspace = "system"
+	cqlSession, err := x.cluster.CreateSession()
 	if err != nil {
-		return fmt.Errorf("migrate: failed to create session: %w", err)
+		return fmt.Errorf("migrate: creating session: %w", err)
 	}
-	defer session.Close()
+	defer cqlSession.Close()
+
+	if err := cqlSession.Query(
+		fmt.Sprintf(
+			`CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION =
+            { 'class' : 'SimpleStrategy', 'replication_factor' : %d }`,
+			keyspace,
+			repFactor,
+		),
+	).Exec(); err != nil {
+		return fmt.Errorf("migrate: creating keyspace: %w", err)
+	}
+
+	x.cluster.Keyspace = keyspace
+	cqlxSession, err := gocqlx.WrapSession(x.cluster.CreateSession())
+	if err != nil {
+		return fmt.Errorf("migrate: wrapping session: %w", err)
+	}
+	defer cqlxSession.Close()
 
 	if err := registerLoggingCallbacks(); err != nil {
 		return err
 	}
 
-	if err := migrate.FromFS(ctx, session, cql.Files); err != nil {
-		return fmt.Errorf("migrate: failed to run migrations: %w", err)
-	}
-
-	return nil
-}
-
-func createKeyspaces(hosts []string, nameSpace string, repFactor int, keyspaces []string) error {
-	cluster := gocql.NewCluster(hosts...)
-	cluster.Consistency = gocql.Consistency(1)
-
-	rootSess, err := gocql.NewSession(*cluster)
-	if err != nil {
-		return fmt.Errorf("migrate: failed to create session: %w", err)
-	}
-	defer rootSess.Close()
-
-	if err := rootSess.Query(
-		fmt.Sprintf(
-			`CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION =
-            { 'class' : 'SimpleStrategy', 'replication_factor' : %d }`,
-			nameSpace,
-			repFactor,
-		),
-	).Exec(); err != nil {
-		return fmt.Errorf("migrate: failed to create namespace: %w", err)
-	}
-
-	cluster.Keyspace = nameSpace
-	session, err := gocqlx.WrapSession(cluster.CreateSession())
-	if err != nil {
-		return fmt.Errorf("migrate: failed to create session: %w", err)
-	}
-	defer session.Close()
-
-	for _, keyspace := range keyspaces {
-		if err := session.ExecStmt(
-			fmt.Sprintf(
-				`CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION =
-            { 'class' : 'SimpleStrategy', 'replication_factor' : %d }`,
-				keyspace,
-				repFactor,
-			),
-		); err != nil {
-			return fmt.Errorf("migrate: failed to create keyspace(s): %w", err)
-		}
+	if err := migrate.FromFS(ctx, cqlxSession, cql.Files); err != nil {
+		return fmt.Errorf("migrate: migrating: %w", err)
 	}
 
 	return nil
@@ -115,7 +82,7 @@ func registerLoggingCallbacks() error {
 
 	filesNames, err := fs.Glob(cql.Files, "*.cql")
 	if err != nil {
-		return fmt.Errorf("migrate: failed to get files names: %w", err)
+		return fmt.Errorf("migrate: getting files names: %w", err)
 	}
 
 	reg := migrate.CallbackRegister{}
@@ -126,20 +93,4 @@ func registerLoggingCallbacks() error {
 	migrate.Callback = reg.Callback
 
 	return nil
-}
-
-func waitForScylla(hosts []string) {
-	cluster := gocql.NewCluster(hosts...)
-	cluster.Consistency = gocql.Consistency(1)
-
-	maxRetries := 30
-	for i := 0; i < maxRetries; i++ {
-		session, err := gocqlx.WrapSession(cluster.CreateSession())
-		if err != nil {
-			log.Info().Msgf("migrate: waiting for Scylla, attempt %d", i)
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		defer session.Close()
-	}
 }
