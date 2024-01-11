@@ -67,11 +67,9 @@ func (x *Session) readPump() {
 			var closeErr *websocket.CloseError
 			if errors.As(err, &closeErr) {
 				log.Info().
-					Msgf(
-						"chat: close message received, code: %d, text: %s",
-						closeErr.Code,
-						closeErr.Text,
-					)
+					Int("code", closeErr.Code).
+					Str("text", closeErr.Text).
+					Msg("chat: close message received")
 				break
 			}
 		}
