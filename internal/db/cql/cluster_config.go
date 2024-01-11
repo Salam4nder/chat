@@ -12,15 +12,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ClusterConfig is a wrapper around gocql.ClusterConfig with additional
-// helper methods.
+// ClusterConfig is a wrapper around gocql.ClusterConfig with helper methods
+// like PingCluster.
 type ClusterConfig struct {
 	cluster *gocql.ClusterConfig
-}
-
-// Session is a wrapper around gocql.Session with additional helper methods.
-type Session struct {
-	session *gocql.Session
 }
 
 // NewClusterConfig creates a new ClusterConfig with the given configuration.
@@ -41,8 +36,9 @@ func (x *ClusterConfig) Inner() *gocql.ClusterConfig {
 	return x.cluster
 }
 
-// PingCluster pings the cluster and returns an error if it cannot.
-// Recommended timeout is 30 seconds.
+// PingCluster creates a session with the 'system' keyspace and pings it.
+// It returns an error if it cannot. Recommended timeout is 30 seconds.
+// Resource cleanup is handled within the method.
 func (x *ClusterConfig) PingCluster(
 	timeout time.Duration,
 	interrupt chan os.Signal,
@@ -80,14 +76,4 @@ func (x *ClusterConfig) PingCluster(
 			return errors.New("cql: interrupted")
 		}
 	}
-}
-
-// NewSession creates a new Session with the given ClusterConfig.
-func NewSession(cfg *ClusterConfig) (*Session, error) {
-	session, err := cfg.cluster.CreateSession()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Session{session: session}, nil
 }
