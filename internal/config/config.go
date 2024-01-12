@@ -14,6 +14,7 @@ type App struct {
 	Environment string     `mapstructure:"environment"`
 	HTTPServer  HTTPServer `mapstructure:"httpServer"`
 	ScyllaDB    ScyllaDB   `mapstructure:"scyllaDB"`
+	NATS        NATS       `mapstructure:"nats"`
 }
 
 // HTTPServer holds the configuration for the HTTP server.
@@ -31,6 +32,12 @@ type ScyllaDB struct {
 	Password          string   `mapstructure:"password"`
 	Consistency       int      `mapstructure:"consistency"`
 	ReplicationFactor int      `mapstructure:"replicationFactor"`
+}
+
+// NATS holds the configuration for the NATS server.
+type NATS struct {
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
 }
 
 // New returns the application-wide configuration.
@@ -67,6 +74,11 @@ func (x *App) Watch() {
 }
 
 // Addr returns the address of the configured HTTP server.
-func (x *HTTPServer) Addr() string {
+func (x HTTPServer) Addr() string {
+	return fmt.Sprintf("%s:%s", x.Host, x.Port)
+}
+
+//Addr returns the address of the configured NATS server.
+func (x NATS) Addr() string {
 	return fmt.Sprintf("%s:%s", x.Host, x.Port)
 }
