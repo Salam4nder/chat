@@ -17,6 +17,12 @@ scylla:
 scylla-rm:
 	docker rm -f -v scylla
 
+nats:
+	docker run -d --name nats --rm -p 4222:4222 -p 8222:8222 nats --http_port 8222
+
+nats-rm:
+	docker rm -f -v nats
+
 test-db:
 	docker compose -f internal/db/compose.yaml up -d --wait
 	bash -c "trap '$(MAKE) test-db/down' EXIT; $(MAKE) test-db/run"
