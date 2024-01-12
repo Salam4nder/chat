@@ -16,8 +16,8 @@ var (
 	_ Keyspace = (*ScyllaKeyspace)(nil)
 )
 
-// Model defines a message model response from the database.
-type Model struct {
+// Response defines a message response from the database.
+type Response struct {
 	ID     gocql.UUID
 	Data   []byte
 	Type   string
@@ -33,7 +33,7 @@ type Keyspace interface {
 	// CreateMessageByRoom creates a new entry in the MessagesInRoom table.
 	CreateMessageByRoom(ctx context.Context, params CreateMessageByRoomParam) error
 	// ReadMessagesByRoom reads all messages from a room based on a roomID.
-	ReadMessagesByRoom(ctx context.Context, roomID string) ([]Model, error)
+	ReadMessagesByRoom(ctx context.Context, roomID string) ([]Response, error)
 }
 
 // ScyllaKeyspace implements the MessagesKeyspace interface.
@@ -88,12 +88,12 @@ func (x *ScyllaKeyspace) CreateMessageByRoom(
 }
 
 // ReadMessagesByRoom reads all messages from a room based on a roomID.
-func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Model, error) {
+func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Response, error) {
 	query := `SELECT id, data, type, sender, room_id, time 
               FROM message.message_by_room 
               WHERE room_id = ?`
 
-	messages := make([]Model, 0)
+	messages := make([]Response, 0)
 
 	scanner := x.session.Query(
 		query,
@@ -103,7 +103,7 @@ func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) 
 		Scanner()
 
 	for scanner.Next() {
-		var message Model
+		var message Response
 
 		if err := scanner.Scan(
 			&message.ID,
@@ -113,7 +113,7 @@ func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) 
 			&message.RoomID,
 			&message.Time,
 		); err != nil {
-			log.Error().Err(err).Msg("message: failed to scan message")
+			log.Error().Err(err).Msg("message: scan message")
 			return nil, err
 		}
 		messages = append(messages, message)
