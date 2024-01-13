@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Salam4nder/chat/internal/db/keyspace/message"
+	"github.com/Salam4nder/chat/internal/db/keyspace/chat"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
@@ -21,7 +21,7 @@ type Session struct {
 	FriendlyName string
 	UserID       uuid.UUID
 
-	MessageKeyspace message.Keyspace
+	MessageRepo chat.MessageRepository
 }
 
 // NewSession returns a new session.
