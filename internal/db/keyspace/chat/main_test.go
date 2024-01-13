@@ -23,7 +23,10 @@ const (
 	keyspace = "chat"
 )
 
-var TestScyllaConn *ScyllaMessageRepository
+var (
+	testMessageRepo *ScyllaMessageRepository
+	testUserRepo    *ScyllaUserRepository
+)
 
 func TestMain(m *testing.M) {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -39,22 +42,21 @@ func TestMain(m *testing.M) {
 	}
 
 	cluster := cql.NewClusterConfig(config)
-	if err := cluster.PingCluster(timeout, interrupt); err != nil {
-		exitOnError(err)
-	}
+	err := cluster.PingCluster(timeout, interrupt)
+	exitOnError(err)
 
-	if err := migrate.NewMigrator(cluster.Inner()).Run(
+	err = migrate.NewMigrator(cluster.Inner()).Run(
 		context.TODO(),
 		config.Keyspace,
 		config.ReplicationFactor,
-	); err != nil {
-		exitOnError(err)
-	}
+	)
+	exitOnError(err)
 
 	session, err := cluster.Inner().CreateSession()
 	exitOnError(err)
 
-	TestScyllaConn = NewScyllaMessageRepository(session)
+	testMessageRepo = NewScyllaMessageRepository(session)
+	testUserRepo = NewScyllaUserRepository(session)
 
 	os.Exit(m.Run())
 }
