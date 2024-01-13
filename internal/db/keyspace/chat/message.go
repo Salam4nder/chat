@@ -2,19 +2,13 @@ package chat
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	// ErrMessageNotFound is returned when a message is not found in the database.
-	ErrMessageNotFound = errors.New("message: message not found")
-
-	_ MessageRepository = (*ScyllaMessageRepository)(nil)
-)
+var _ MessageRepository = (*ScyllaMessageRepository)(nil)
 
 // Message defines the message database model.
 type Message struct {
