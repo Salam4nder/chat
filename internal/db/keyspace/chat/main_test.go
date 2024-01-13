@@ -1,6 +1,6 @@
 //go:build testdb
 
-package message
+package chat
 
 import (
 	"context"
@@ -23,7 +23,7 @@ const (
 	keyspace = "chat"
 )
 
-var TestScyllaConn *ScyllaKeyspace
+var TestScyllaConn *ScyllaMessageRepository
 
 func TestMain(m *testing.M) {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
 	session, err := cluster.Inner().CreateSession()
 	exitOnError(err)
 
-	TestScyllaConn = NewKeyspace(session)
+	TestScyllaConn = NewScyllaMessageRepository(session)
 
 	os.Exit(m.Run())
 }

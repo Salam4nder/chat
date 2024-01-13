@@ -1,4 +1,4 @@
-package message
+package chat
 
 import (
 	"context"
@@ -13,11 +13,11 @@ var (
 	// ErrMessageNotFound is returned when a message is not found in the database.
 	ErrMessageNotFound = errors.New("message: message not found")
 
-	_ Keyspace = (*ScyllaKeyspace)(nil)
+	_ MessageRepository = (*ScyllaMessageRepository)(nil)
 )
 
-// Response defines a message response from the database.
-type Response struct {
+// Message defines the message database model.
+type Message struct {
 	ID     gocql.UUID
 	Data   []byte
 	Type   string
@@ -26,28 +26,28 @@ type Response struct {
 	Time   time.Time
 }
 
-// Keyspace defines database methods to interact with messages.
-type Keyspace interface {
+// MessageRepository defines database methods to interact with messages.
+type MessageRepository interface {
 	// Session returns the underlying database session.
 	Session() *gocql.Session
 	// CreateMessageByRoom creates a new entry in the MessagesInRoom table.
 	CreateMessageByRoom(ctx context.Context, params CreateMessageByRoomParam) error
 	// ReadMessagesByRoom reads all messages from a room based on a roomID.
-	ReadMessagesByRoom(ctx context.Context, roomID string) ([]Response, error)
+	ReadMessagesByRoom(ctx context.Context, roomID string) ([]Message, error)
 }
 
-// ScyllaKeyspace implements the MessagesKeyspace interface.
-type ScyllaKeyspace struct {
+// ScyllaMessageRepository implements the MessagesRepository interface.
+type ScyllaMessageRepository struct {
 	session *gocql.Session
 }
 
-// NewKeyspace creates a new instace of a message.Keyspace.
-func NewKeyspace(session *gocql.Session) *ScyllaKeyspace {
-	return &ScyllaKeyspace{session: session}
+// NewScyllaMessageRepository creates a new instace of a ScyllaMessageRepository.
+func NewScyllaMessageRepository(session *gocql.Session) *ScyllaMessageRepository {
+	return &ScyllaMessageRepository{session: session}
 }
 
 // Session returns the underlying database session.
-func (x *ScyllaKeyspace) Session() *gocql.Session {
+func (x *ScyllaMessageRepository) Session() *gocql.Session {
 	return x.session
 }
 
@@ -62,11 +62,11 @@ type CreateMessageByRoomParam struct {
 }
 
 // CreateMessageByRoom creates a new entry in the MessageByRoom table.
-func (x *ScyllaKeyspace) CreateMessageByRoom(
+func (x *ScyllaMessageRepository) CreateMessageByRoom(
 	ctx context.Context,
 	params CreateMessageByRoomParam,
 ) error {
-	query := `INSERT INTO message.message_by_room 
+	query := `INSERT INTO chat.message_by_room 
               (id, data, type, sender, room_id, time) 
               VALUES (?, ?, ?, ?, ?, ?)`
 
@@ -88,12 +88,12 @@ func (x *ScyllaKeyspace) CreateMessageByRoom(
 }
 
 // ReadMessagesByRoom reads all messages from a room based on a roomID.
-func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Response, error) {
+func (x *ScyllaMessageRepository) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Message, error) {
 	query := `SELECT id, data, type, sender, room_id, time 
-              FROM message.message_by_room 
+              FROM chat.message_by_room 
               WHERE room_id = ?`
 
-	messages := make([]Response, 0)
+	messages := make([]Message, 0)
 
 	scanner := x.session.Query(
 		query,
@@ -103,7 +103,7 @@ func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) 
 		Scanner()
 
 	for scanner.Next() {
-		var message Response
+		var message Message
 
 		if err := scanner.Scan(
 			&message.ID,

@@ -1,6 +1,6 @@
 //go:build testdb
 
-package message
+package chat
 
 import (
 	"context"
