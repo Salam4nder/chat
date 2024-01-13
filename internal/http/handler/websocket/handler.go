@@ -19,22 +19,27 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Error().Err(err).Msg("websocket: failed to upgrade connection")
+		log.Error().Err(err).Msg("websocket: upgrading connection")
 		return
 	}
 
-	queryVal := r.URL.Query()
-	roomID, err := uuid.Parse(queryVal.Get("roomID"))
+	if r.URL == nil {
+		log.Error().Msg("websocket: url is nil")
+		return
+	}
+
+	query := r.URL.Query()
+	roomID, err := uuid.Parse(query.Get("roomID"))
 	if err != nil {
 		log.Error().
 			Err(err).
-			Msg("websocket: failed to parse url query for roomID")
+			Msg("websocket: parsing url query for roomID")
 		return
 	}
-	username := queryVal.Get("name")
+	username := query.Get("name")
 	if username == "" {
 		log.Warn().
-			Msg("websocket: failed to parse url query for name")
+			Msg("websocket: parsing url query for name")
 
 		username = "unknown"
 	}
