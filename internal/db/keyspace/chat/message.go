@@ -33,7 +33,7 @@ type MessageRepository interface {
 	// CreateMessageByRoom creates a new entry in the MessagesInRoom table.
 	CreateMessageByRoom(ctx context.Context, params CreateMessageByRoomParam) error
 	// ReadMessagesByRoom reads all messages from a room based on a roomID.
-	ReadMessagesByRoom(ctx context.Context, roomID string) ([]Message, error)
+	ReadMessagesByRoomID(ctx context.Context, roomID string) ([]Message, error)
 }
 
 // ScyllaMessageRepository implements the MessagesRepository interface.
@@ -87,8 +87,11 @@ func (x *ScyllaMessageRepository) CreateMessageByRoom(
 	return nil
 }
 
-// ReadMessagesByRoom reads all messages from a room based on a roomID.
-func (x *ScyllaMessageRepository) ReadMessagesByRoom(ctx context.Context, roomID string) ([]Message, error) {
+// ReadMessagesByRoomID reads all messages from a room based on a roomID.
+func (x *ScyllaMessageRepository) ReadMessagesByRoomID(
+	ctx context.Context,
+	roomID string,
+) ([]Message, error) {
 	query := `SELECT id, data, type, sender, room_id, time 
               FROM chat.message_by_room 
               WHERE room_id = ?`
