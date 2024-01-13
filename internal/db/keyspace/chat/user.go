@@ -9,7 +9,7 @@ import (
 
 // UserInRoom defines the user_in_room database model.
 type UserInRoom struct {
-	ID     gocql.UUID
+	UserID gocql.UUID
 	RoomID gocql.UUID
 }
 
@@ -17,12 +17,12 @@ type UserInRoom struct {
 type UserRepository interface {
 	// CreateUserInRoom creates an entry in the chat.user_in_room table.
 	// It is used to keep track of which users are in which rooms for reconnection.
-	CreateUserInRoom(ctx context.Context, params UserInRoomParams) error
+	CreateUserInRoom(ctx context.Context, params UserInRoom) error
 	// ReadRoomsByUser reads all the rooms a user is in.
 	ReadRoomsByUser(ctx context.Context, userID gocql.UUID) ([]UserInRoom, error)
 	// DeleteUserInRoom deletes an entry in the chat.user_in_room table.
 	// Used when a user leaves a room.
-	DeleteUserInRoom(ctx context.Context, params UserInRoomParams) error
+	DeleteUserInRoom(ctx context.Context, params UserInRoom) error
 }
 
 // ScyllaUserRepository implements the UserRepository interface.
@@ -30,17 +30,18 @@ type ScyllaUserRepository struct {
 	session *gocql.Session
 }
 
-// UserInRoomParams defines the parameters used to create or delete a user in a room.
-type UserInRoomParams struct {
-	UserID gocql.UUID
-	RoomID gocql.UUID
+// NewScyllaUserRepository creates a new ScyllaUserRepository.
+func NewScyllaUserRepository(session *gocql.Session) *ScyllaUserRepository {
+	return &ScyllaUserRepository{
+		session: session,
+	}
 }
 
 // CreateUserInRoom creates an entry in the chat.user_in_room table.
 // It is used to keep track of which users are in which rooms for reconnection.
 func (x *ScyllaUserRepository) CreateUserInRoom(
 	ctx context.Context,
-	params UserInRoomParams,
+	params UserInRoom,
 ) error {
 	query := `INSERT INTO chat.user_in_room 
               (user_id, room_id) 
@@ -62,7 +63,7 @@ func (x *ScyllaUserRepository) CreateUserInRoom(
 // DeleteUserInRoom deletes an entry in the chat.user_in_room table.
 func (x *ScyllaUserRepository) DeleteUserInRoom(
 	ctx context.Context,
-	params UserInRoomParams,
+	params UserInRoom,
 ) error {
 	query := `DELETE FROM chat.user_in_room 
               WHERE user_id = ? AND room_id = ?`
