@@ -80,7 +80,7 @@ func (x *ScyllaKeyspace) CreateMessageByRoom(
 		params.Timestamp,
 	).WithContext(ctx).
 		Exec(); err != nil {
-		log.Error().Err(err).Msg("message: failed to create message")
+		log.Error().Err(err).Msg("message: creating message")
 		return err
 	}
 
@@ -113,7 +113,7 @@ func (x *ScyllaKeyspace) ReadMessagesByRoom(ctx context.Context, roomID string) 
 			&message.RoomID,
 			&message.Time,
 		); err != nil {
-			log.Error().Err(err).Msg("message: scan message")
+			log.Error().Err(err).Msg("message: scanning message")
 			return nil, err
 		}
 		messages = append(messages, message)
