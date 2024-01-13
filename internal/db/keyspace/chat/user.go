@@ -56,3 +56,24 @@ func (x *ScyllaUserRepository) CreateUserInRoom(
 
 	return nil
 }
+
+// DeleteUserInRoom deletes an entry in the chat.user_in_room table.
+func (x *ScyllaUserRepository) DeleteUserInRoom(
+	ctx context.Context,
+	params UserInRoomParams,
+) error {
+	query := `DELETE FROM chat.user_in_room 
+              WHERE user_id = ? AND room_id = ?`
+
+	if err := x.session.Query(
+		query,
+		params.UserID,
+		params.RoomID,
+	).WithContext(ctx).
+		Exec(); err != nil {
+		log.Error().Err(err).Msg("message: deleting user in room")
+		return err
+	}
+
+	return nil
+}
