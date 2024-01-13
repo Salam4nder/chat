@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// User defines the user database model.
-type User struct {
+// UserInRoom defines the user_in_room database model.
+type UserInRoom struct {
 	ID     gocql.UUID
 	RoomID gocql.UUID
 }
@@ -18,6 +18,8 @@ type UserRepository interface {
 	// CreateUserInRoom creates an entry in the chat.user_in_room table.
 	// It is used to keep track of which users are in which rooms for reconnection.
 	CreateUserInRoom(ctx context.Context, params UserInRoomParams) error
+	// ReadRoomsByUser reads all the rooms a user is in.
+	ReadRoomsByUser(ctx context.Context, userID gocql.UUID) ([]UserInRoom, error)
 	// DeleteUserInRoom deletes an entry in the chat.user_in_room table.
 	// Used when a user leaves a room.
 	DeleteUserInRoom(ctx context.Context, params UserInRoomParams) error
