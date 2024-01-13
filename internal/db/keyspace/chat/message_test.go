@@ -20,7 +20,7 @@ func Test_CreateMessageByRoom(t *testing.T) {
 		timeNow := time.Now().UTC()
 
 		t.Cleanup(func() {
-			err := TestScyllaConn.Session().Query("TRUNCATE chat.message_by_room").Exec()
+			err := testMessageRepo.Session().Query("TRUNCATE chat.message_by_room").Exec()
 			assert.NoError(t, err)
 		})
 
@@ -32,14 +32,14 @@ func Test_CreateMessageByRoom(t *testing.T) {
 			Timestamp: timeNow,
 		}
 
-		err := TestScyllaConn.CreateMessageByRoom(ctx, params)
+		err := testMessageRepo.CreateMessageByRoom(ctx, params)
 		require.NoError(t, err)
 
 		query := `SELECT id, data, type, sender, room_id, time 
               FROM chat.message_by_room 
               WHERE room_id = ?`
 		messages := make([]Message, 0)
-		scanner := TestScyllaConn.Session().Query(query, params.RoomID).Iter().Scanner()
+		scanner := testMessageRepo.Session().Query(query, params.RoomID).Iter().Scanner()
 
 		for scanner.Next() {
 			var message Message
@@ -72,7 +72,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
               (id, data, type, sender, room_id, time) 
               VALUES (?, ?, ?, ?, ?, ?)`
 
-			err := TestScyllaConn.Session().Query(
+			err := testMessageRepo.Session().Query(
 				query,
 				gocql.UUIDFromTime(time.Now()),
 				params.Data,
@@ -87,7 +87,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 	t.Run("Success 1 message", func(t *testing.T) {
 		t.Cleanup(func() {
-			err := TestScyllaConn.Session().Query("TRUNCATE chat.message_by_room").Exec()
+			err := testMessageRepo.Session().Query("TRUNCATE chat.message_by_room").Exec()
 			assert.NoError(t, err)
 		})
 		timeNow := time.Now().UTC()
@@ -102,7 +102,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 		insertMessages(t, params, 1)
 
-		messages, err := TestScyllaConn.ReadMessagesByRoomID(context.Background(), params.RoomID)
+		messages, err := testMessageRepo.ReadMessagesByRoomID(context.Background(), params.RoomID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(messages))
 		m := messages[0]
@@ -115,7 +115,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 	t.Run("Success 10 messages", func(t *testing.T) {
 		t.Cleanup(func() {
-			err := TestScyllaConn.Session().Query("TRUNCATE chat.message_by_room").Exec()
+			err := testMessageRepo.Session().Query("TRUNCATE chat.message_by_room").Exec()
 			assert.NoError(t, err)
 		})
 		timeNow := time.Now().UTC()
@@ -130,13 +130,13 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 		insertMessages(t, params, 10)
 
-		messages, err := TestScyllaConn.ReadMessagesByRoomID(context.Background(), params.RoomID)
+		messages, err := testMessageRepo.ReadMessagesByRoomID(context.Background(), params.RoomID)
 		require.NoError(t, err)
 		require.Equal(t, 10, len(messages))
 	})
 
-	t.Run("Room not found", func(t *testing.T) {
-		messages, err := TestScyllaConn.ReadMessagesByRoomID(context.Background(), uuid.NewString())
+	t.Run("Room not found returns 0 messages, no error", func(t *testing.T) {
+		messages, err := testMessageRepo.ReadMessagesByRoomID(context.Background(), uuid.NewString())
 		require.NoError(t, err)
 		require.Empty(t, messages)
 	})
