@@ -3,6 +3,7 @@ package chat
 import (
 	"errors"
 
+	"github.com/Salam4nder/chat/internal/db/keyspace/chat"
 	"github.com/google/uuid"
 )
 
@@ -16,12 +17,17 @@ var (
 	ErrMessageTimestampInvalid = errors.New("message timestamp invalid")
 )
 
+// MessageService defines the main message service.
+type MessageService struct {
+	messageRepo chat.MessageRepository
+}
+
 // Message defines the message structure.
 type Message struct {
 	ID        uuid.UUID
 	Type      int
-	RoomID    uuid.UUID
-	SessionID uuid.UUID
+	RoomID    string
+	SessionID string
 	Body      []byte
 	Author    string
 	Timestamp string
@@ -45,10 +51,10 @@ func (x *Message) Valid() error {
 	if x.Type == 0 || x.Type > 10 {
 		messageTypeErr = ErrMessageTypeInvalid
 	}
-	if x.RoomID == uuid.Nil {
+	if x.RoomID == "" {
 		messageRoomIDErr = ErrMessageRoomIDInvalid
 	}
-	if x.SessionID == uuid.Nil {
+	if x.SessionID == "" {
 		messageSessionIDErr = ErrMessageSessionIDInvalid
 	}
 	if len(x.Body) == 0 {
