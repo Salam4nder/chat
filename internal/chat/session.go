@@ -12,7 +12,7 @@ import (
 
 // Session is a single client session in a room.
 type Session struct {
-	ID     uuid.UUID
+	ID     string
 	Active bool
 	Room   *Room
 	Conn   *websocket.Conn
@@ -26,22 +26,17 @@ type Session struct {
 
 // NewSession returns a new session.
 func NewSession(
-	id uuid.UUID,
 	room *Room,
 	conn *websocket.Conn,
-	friendlyName string,
+	username string,
 ) *Session {
-	if id == uuid.Nil {
-		id = uuid.New()
-	}
-
 	return &Session{
-		ID:           id,
+		ID:           uuid.NewString(),
 		Active:       true,
 		Room:         room,
 		Conn:         conn,
 		In:           make(chan Message),
-		FriendlyName: friendlyName,
+		FriendlyName: username,
 	}
 }
 
