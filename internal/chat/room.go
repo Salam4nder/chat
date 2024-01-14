@@ -16,7 +16,7 @@ type empty struct{}
 type Room struct {
 	mu sync.Mutex
 
-	ID        uuid.UUID
+	ID        string
 	Join      chan *Session
 	Leave     chan *Session
 	Active    bool
@@ -27,7 +27,7 @@ type Room struct {
 // NewRoom returns a new room.
 func NewRoom() *Room {
 	return &Room{
-		ID:        uuid.New(),
+		ID:        uuid.NewString(),
 		Join:      make(chan *Session),
 		Leave:     make(chan *Session),
 		Active:    true,
@@ -46,7 +46,7 @@ func (x *Room) Run() {
 			x.Sessions[session] = empty{}
 			x.mu.Unlock()
 
-			log.Info().Msgf("chat: user joined room %s", x.ID.String())
+			log.Info().Msgf("chat: user joined room %s", x.ID)
 
 		case session := <-x.Leave:
 			close(session.In)
@@ -55,7 +55,7 @@ func (x *Room) Run() {
 			delete(x.Sessions, session)
 			x.mu.Unlock()
 
-			log.Info().Msgf("chat: user left room %s", x.ID.String())
+			log.Info().Msgf("chat: user left room %s", x.ID)
 
 		case message := <-x.Broadcast:
 			for session := range x.Sessions {
@@ -65,7 +65,7 @@ func (x *Room) Run() {
 			log.Info().
 				Str("body", string(message.Body)).
 				Str("author", message.Author).
-				Str("room", x.ID.String()).
+				Str("room", x.ID).
 				Send()
 		}
 	}
