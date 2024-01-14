@@ -2,10 +2,10 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/rs/zerolog/log"
 )
 
 var _ MessageRepository = (*ScyllaMessageRepository)(nil)
@@ -25,7 +25,7 @@ type MessageRepository interface {
 	// Session returns the underlying database session.
 	Session() *gocql.Session
 	// CreateMessageByRoom creates a new entry in the MessagesInRoom table.
-	CreateMessageByRoom(ctx context.Context, params CreateMessageByRoomParam) error
+	CreateMessageByRoom(ctx context.Context, params CreateMessageByRoomParams) error
 	// ReadMessagesByRoom reads all messages from a room based on a roomID.
 	ReadMessagesByRoomID(ctx context.Context, roomID string) ([]Message, error)
 }
@@ -45,9 +45,9 @@ func (x *ScyllaMessageRepository) Session() *gocql.Session {
 	return x.session
 }
 
-// CreateMessageByRoomParam defines the parameters to create
+// CreateMessageByRoomParams defines the parameters to create
 // a new message in a room.
-type CreateMessageByRoomParam struct {
+type CreateMessageByRoomParams struct {
 	Data      []byte
 	Type      string
 	Sender    string
@@ -58,7 +58,7 @@ type CreateMessageByRoomParam struct {
 // CreateMessageByRoom creates a new entry in the MessageByRoom table.
 func (x *ScyllaMessageRepository) CreateMessageByRoom(
 	ctx context.Context,
-	params CreateMessageByRoomParam,
+	params CreateMessageByRoomParams,
 ) error {
 	query := `INSERT INTO chat.message_by_room 
               (id, data, type, sender, room_id, time) 
@@ -74,8 +74,7 @@ func (x *ScyllaMessageRepository) CreateMessageByRoom(
 		params.Timestamp,
 	).WithContext(ctx).
 		Exec(); err != nil {
-		log.Error().Err(err).Msg("message: creating message")
-		return err
+		return fmt.Errorf("message repo: creating message, %w", err)
 	}
 
 	return nil
@@ -110,15 +109,13 @@ func (x *ScyllaMessageRepository) ReadMessagesByRoomID(
 			&message.RoomID,
 			&message.Time,
 		); err != nil {
-			log.Error().Err(err).Msg("message: scanning message")
-			return nil, err
+			return nil, fmt.Errorf("message repo: scanning message, %w", err)
 		}
 		messages = append(messages, message)
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Error().Err(err).Msg("message: scanner had errors")
-		return nil, err
+		return nil, fmt.Errorf("message repo: scanner had errors, %w", err)
 	}
 
 	return messages, nil
