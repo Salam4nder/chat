@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	db "github.com/Salam4nder/chat/internal/db/keyspace/chat"
 	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 )
@@ -13,7 +14,10 @@ const (
 	MessageCreatedInRoomEventName = "MessageCreatedInRoom"
 )
 
-var ErrInvalidEventError = errors.New("invalid event")
+var (
+	ErrWrongEventType    = errors.New("wrong event type")
+	ErrInvalidEventError = errors.New("invalid event")
+)
 
 type MessageCreatedInRoomEvent struct {
 	eventID uuid.UUID
@@ -35,14 +39,26 @@ func (x MessageCreatedInRoomEvent) EventName() string {
 	return MessageCreatedInRoomEventName
 }
 
-func HandleMessageCreatedInRoomEvent(ctx context.Context, event event.Event) error {
+func (x *MessageService) HandleMessageCreatedInRoomEvent(
+	ctx context.Context,
+	event event.Event,
+) error {
 	payload, ok := event.Payload().(Message)
 	if !ok {
-		return ErrInvalidEventError
+		return ErrWrongEventType
 	}
 
 	if err := payload.Valid(); err != nil {
-		return fmt.Errorf("validating message: %w", err)
+		return fmt.Errorf("chat: %w: %w", ErrInvalidEventError, err)
+	}
+
+	if err := x.messageRepo.CreateMessageByRoom(ctx, db.CreateMessageByRoomParams{
+		Data:   payload.Body,
+		Type:   payload.TypeString(),
+		Sender: payload.Author,
+		RoomID: payload.RoomID,
+	}); err != nil {
+		return fmt.Errorf("message service: persisting message in room, %w", err)
 	}
 
 	return nil
