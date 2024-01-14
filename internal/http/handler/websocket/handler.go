@@ -47,7 +47,6 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 	roomIDStr := roomID.String()
 	if room, exists := chat.Rooms[roomIDStr]; exists {
 		session := chat.NewSession(
-			uuid.New(),
 			chat.Rooms[roomIDStr],
 			conn,
 			username,
@@ -66,7 +65,6 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 	go room.Run()
 
 	session := chat.NewSession(
-		uuid.New(),
 		chat.Rooms[roomIDStr],
 		conn,
 		username,
