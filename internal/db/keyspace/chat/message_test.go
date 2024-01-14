@@ -24,7 +24,7 @@ func Test_CreateMessageByRoom(t *testing.T) {
 			assert.NoError(t, err)
 		})
 
-		params := CreateMessageByRoomParam{
+		params := CreateMessageByRoomParams{
 			Data:      []byte("test"),
 			Type:      "text",
 			Sender:    "test_sender",
@@ -66,7 +66,7 @@ func Test_CreateMessageByRoom(t *testing.T) {
 }
 
 func Test_ReadMessagesByRoomID(t *testing.T) {
-	insertMessages := func(t *testing.T, params CreateMessageByRoomParam, count int) {
+	insertMessages := func(t *testing.T, params CreateMessageByRoomParams, count int) {
 		for i := 0; i < count; i++ {
 			query := `INSERT INTO chat.message_by_room 
               (id, data, type, sender, room_id, time) 
@@ -92,7 +92,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 		})
 		timeNow := time.Now().UTC()
 
-		params := CreateMessageByRoomParam{
+		params := CreateMessageByRoomParams{
 			Data:      []byte("test"),
 			Type:      "text",
 			Sender:    "test_sender",
@@ -120,7 +120,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 		})
 		timeNow := time.Now().UTC()
 
-		params := CreateMessageByRoomParam{
+		params := CreateMessageByRoomParams{
 			Data:      []byte("test"),
 			Type:      "text",
 			Sender:    "test_sender",
