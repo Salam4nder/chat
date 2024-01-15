@@ -38,8 +38,8 @@ func (x *MessageService) HandleMessageCreatedInRoomEvent(
 		return fmt.Errorf("message service: persisting message in room, %w", err)
 	}
 
-	//TODO: publish event to nats
-	x.natsClient.Publish(evt.Name, nil)
+	// TODO: publish event to nats
+	// x.natsClient.Publish(evt.Name, nil)
 
 	return nil
 }

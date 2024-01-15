@@ -78,7 +78,7 @@ func (x HTTPServer) Addr() string {
 	return fmt.Sprintf("%s:%s", x.Host, x.Port)
 }
 
-//Addr returns the address of the configured NATS server.
+// Addr returns the address of the configured NATS server.
 func (x NATS) Addr() string {
 	return fmt.Sprintf("%s:%s", x.Host, x.Port)
 }
