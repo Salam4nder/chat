@@ -38,6 +38,9 @@ const (
 )
 
 func main() {
+	interruptCh := make(chan os.Signal, 1)
+	signal.Notify(interruptCh, os.Interrupt, syscall.SIGTERM)
+
 	// Config.
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -48,27 +51,12 @@ func main() {
 	}
 	go config.Watch()
 
-	chat.Rooms = make(map[string]*chat.Room)
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
 	// ScyllaDB.
 	cluster := cql.NewClusterConfig(config.ScyllaDB)
-	if err := cluster.PingCluster(scyllaTimeout, sigCh); err != nil {
-		exitOnError(err)
-	}
+	err = cluster.PingWithTimeout(scyllaTimeout, interruptCh)
+	exitOnError(err)
 	scyllaSession, err := cluster.Inner().CreateSession()
-	if err != nil {
-		exitOnError(err)
-	}
-
-	// Repos.
-	// userRepo := db.NewScyllaUserRepository(scyllaSession)
-	messageRepo := db.NewScyllaMessageRepository(scyllaSession)
-
-	// In-memory pub/sub.
-	registry := event.NewRegistry()
+	exitOnError(err)
 
 	// NATS.
 	natsClient, err := nats.Connect(
@@ -79,9 +67,23 @@ func main() {
 	)
 	exitOnError(err)
 
+	// Repos.
+	// userRepo := db.NewScyllaUserRepository(scyllaSession)
+	messageRepo := db.NewScyllaMessageRepository(scyllaSession)
+
+	// In-memory pub/sub.
+	registry := event.NewRegistry()
+
 	// Services.
-	chat.NewMessageService(messageRepo, natsClient)
-	chat.NewSessionService(natsClient)
+	messageService := chat.NewMessageService(messageRepo, natsClient)
+	sessionService := chat.NewSessionService(natsClient)
+
+	// Concurrent-safe map of chat rooms.
+	chat.Rooms = make(map[string]*chat.Room)
+
+	// Subscribers.
+	registry.Subscribe(chat.MessageCreatedInRoomEvent, messageService.HandleMessageCreatedInRoomEvent)
+	registry.Subscribe(chat.NewSessionConnectedEvent, sessionService.HandleNewSessionConnectedEvent)
 
 	// HTTP server.
 	server := &http.Server{
@@ -107,18 +109,16 @@ func main() {
 	}()
 	log.Info().Str("service", config.ServiceName).Send()
 
-	<-sigCh
+	<-interruptCh
 	log.Info().Msg("main: cleaning up...")
-
 	scyllaSession.Close()
-
 	if err = server.Shutdown(context.Background()); err != nil {
 		log.Error().
 			Err(err).
 			Msg("main: failed to shutdown HTTP server")
 	}
-
 	log.Info().Msg("main: cleanup finished")
+
 	os.Exit(0)
 }
 
