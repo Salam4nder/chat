@@ -48,32 +48,16 @@ func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 		username = "unknown"
 	}
 
-	roomIDStr := roomID.String()
-	if room, exists := chat.Rooms[roomIDStr]; exists {
-		session := chat.NewSession(
-			chat.Rooms[roomIDStr],
-			conn,
-			username,
-		)
-
-		room.Join <- session
-
-		go session.Read()
-		go session.Write()
-
-		return
+	if err := x.registry.Publish(
+		r.Context(),
+		event.New(chat.NewSessionConnectedEvent, chat.NewSessionConnectedEventPayload{
+			RoomID:   roomID.String(),
+			Username: username,
+			Conn:     conn,
+		}),
+	); err != nil {
+		log.Error().
+			Err(err).
+			Msg("websocket: publishing session connected event")
 	}
-
-	room := chat.NewRoom()
-	chat.Rooms[roomIDStr] = room
-	go room.Run()
-
-	session := chat.NewSession(
-		chat.Rooms[roomIDStr],
-		conn,
-		username,
-	)
-	go session.Read()
-	go session.Write()
-	room.Join <- session
 }
