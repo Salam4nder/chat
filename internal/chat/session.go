@@ -1,10 +1,11 @@
 package chat
 
 import (
+	"context"
 	"errors"
 	"time"
 
-	"github.com/Salam4nder/chat/internal/db/keyspace/chat"
+	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
@@ -17,11 +18,11 @@ type Session struct {
 	Room   *Room
 	Conn   *websocket.Conn
 	In     chan Message
-	// FriendlyName is the displayed name of the connected user.
-	FriendlyName string
-	UserID       uuid.UUID
+	// Username is the displayed name of the connected user.
+	Username string
+	UserID   uuid.UUID
 
-	MessageRepo chat.MessageRepository
+	EventRegistry *event.Registry
 }
 
 // NewSession returns a new session.
@@ -29,14 +30,16 @@ func NewSession(
 	room *Room,
 	conn *websocket.Conn,
 	username string,
+	registry *event.Registry,
 ) *Session {
 	return &Session{
-		ID:           uuid.NewString(),
-		Active:       true,
-		Room:         room,
-		Conn:         conn,
-		In:           make(chan Message),
-		FriendlyName: username,
+		ID:            uuid.NewString(),
+		Active:        true,
+		Room:          room,
+		Conn:          conn,
+		In:            make(chan Message),
+		Username:      username,
+		EventRegistry: registry,
 	}
 }
 
@@ -69,14 +72,23 @@ func (x *Session) readPump() {
 			}
 		}
 
-		x.Room.Broadcast <- Message{
+		message := Message{
 			Type:      mType,
 			RoomID:    x.Room.ID,
 			SessionID: x.ID,
 			Body:      m,
-			Author:    x.FriendlyName,
+			Author:    x.Username,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 		}
+
+		if err := x.EventRegistry.Publish(
+			context.Background(),
+			event.New(MessageCreatedInRoomEvent, message),
+		); err != nil {
+		}
+
+		x.Room.Broadcast <- message
+
 	}
 }
 
