@@ -25,7 +25,7 @@ func (x *Registry) Subscribe(event Event, handler Handler) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.handlers[event.Name()] = append(x.handlers[event.Name()], handler)
+	x.handlers[event.Name] = append(x.handlers[event.Name], handler)
 }
 
 // Publish publishes the given event to all its handlers.
@@ -33,7 +33,7 @@ func (x *Registry) Publish(ctx context.Context, event Event) error {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	for _, handler := range x.handlers[event.Name()] {
+	for _, handler := range x.handlers[event.Name] {
 		if err := handler(ctx, event); err != nil {
 			return err
 		}
