@@ -76,7 +76,6 @@ func (x *Session) readPump() {
 		}
 
 		x.Room.Broadcast <- message
-
 	}
 }
 

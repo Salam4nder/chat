@@ -63,30 +63,22 @@ func (s *SessionService) HandleNewSessionConnectedEvent(ctx context.Context, evt
 		return fmt.Errorf("chat: %w, %w", event.ErrInvalidEventError, err)
 	}
 
-	if room, exists := Rooms[payload.RoomID]; exists {
-		session := NewSession(
-			Rooms[payload.RoomID],
-			payload.Conn,
-			payload.Username,
-		)
-		room.Join <- session
-		go session.Read()
-		go session.Write()
-		return nil
-	}
+	room, exists := Rooms[payload.RoomID]
+	if !exists {
+		room = NewRoom()
+		Rooms[payload.RoomID] = room
+		go room.Run()
 
-	room := NewRoom()
-	Rooms[payload.RoomID] = room
-	go room.Run()
+	}
 
 	session := NewSession(
 		Rooms[payload.RoomID],
 		payload.Conn,
 		payload.Username,
 	)
+	room.Join <- session
 	go session.Read()
 	go session.Write()
-	room.Join <- session
 
 	return nil
 }
