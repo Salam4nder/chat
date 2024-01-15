@@ -8,8 +8,14 @@ import (
 	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog/log"
 )
+
+// SessionService handles session events and communicates with NATS.
+type SessionService struct {
+	natsClient *nats.Conn
+}
 
 // Session is a single client session in a room.
 type Session struct {
