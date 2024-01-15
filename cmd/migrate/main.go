@@ -29,7 +29,7 @@ func main() {
 	log.Info().Msg("migrate cmd: migration started")
 
 	cluster := cql.NewClusterConfig(config.ScyllaDB)
-	if err := cluster.PingCluster(timeout, interrupt); err != nil {
+	if err := cluster.PingWithTimeout(timeout, interrupt); err != nil {
 		exitOnError(err)
 	}
 

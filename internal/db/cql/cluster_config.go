@@ -36,10 +36,10 @@ func (x *ClusterConfig) Inner() *gocql.ClusterConfig {
 	return x.cluster
 }
 
-// PingCluster creates a session with the 'system' keyspace and pings it.
+// PingWithTimeout creates a session with the 'system' keyspace and pings it.
 // It returns an error if it cannot. Recommended timeout is 30 seconds.
 // Resource cleanup is handled within the method.
-func (x *ClusterConfig) PingCluster(
+func (x *ClusterConfig) PingWithTimeout(
 	timeout time.Duration,
 	interrupt chan os.Signal,
 ) error {

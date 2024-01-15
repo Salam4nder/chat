@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 	}
 
 	cluster := cql.NewClusterConfig(config)
-	err := cluster.PingCluster(timeout, interrupt)
+	err := cluster.PingWithTimeout(timeout, interrupt)
 	exitOnError(err)
 
 	err = migrate.NewMigrator(cluster.Inner()).Run(
