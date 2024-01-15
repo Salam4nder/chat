@@ -3,9 +3,7 @@ package chat
 import (
 	"errors"
 
-	"github.com/Salam4nder/chat/internal/db/keyspace/chat"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
 )
 
 var (
@@ -18,13 +16,6 @@ var (
 	ErrMessageTimestampInvalid = errors.New("message timestamp invalid")
 )
 
-// MessageService defines the main message service.
-// It can persist messages and communicate with NATS.
-type MessageService struct {
-	messageRepo chat.MessageRepository
-	natsClient  *nats.Conn
-}
-
 // Message defines the message structure.
 type Message struct {
 	ID        uuid.UUID
@@ -34,15 +25,6 @@ type Message struct {
 	Body      []byte
 	Author    string
 	Timestamp string
-}
-
-// NewMessageService returns a new instance of MessageService.
-// It can persist messages and communicate with NATS.
-func NewMessageService(repo chat.MessageRepository, client *nats.Conn) *MessageService {
-	return &MessageService{
-		messageRepo: repo,
-		natsClient:  client,
-	}
 }
 
 // Valid returns nil if all the fields of Message are valid.
