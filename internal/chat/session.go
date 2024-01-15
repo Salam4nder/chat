@@ -1,23 +1,15 @@
 package chat
 
 import (
-	"context"
 	"errors"
 	"time"
 
-	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog/log"
 )
 
-// SessionService handles session events and communicates with NATS.
-type SessionService struct {
-	natsClient *nats.Conn
-}
-
-// Session is a single client session in a room.
+// Session is a single client session in a chat room.
 type Session struct {
 	ID     string
 	Active bool
@@ -27,8 +19,6 @@ type Session struct {
 	// Username is the displayed name of the connected user.
 	Username string
 	UserID   uuid.UUID
-
-	EventRegistry *event.Registry
 }
 
 // NewSession returns a new session.
@@ -36,16 +26,14 @@ func NewSession(
 	room *Room,
 	conn *websocket.Conn,
 	username string,
-	registry *event.Registry,
 ) *Session {
 	return &Session{
-		ID:            uuid.NewString(),
-		Active:        true,
-		Room:          room,
-		Conn:          conn,
-		In:            make(chan Message),
-		Username:      username,
-		EventRegistry: registry,
+		ID:       uuid.NewString(),
+		Active:   true,
+		Room:     room,
+		Conn:     conn,
+		In:       make(chan Message),
+		Username: username,
 	}
 }
 
@@ -85,12 +73,6 @@ func (x *Session) readPump() {
 			Body:      m,
 			Author:    x.Username,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
-		}
-
-		if err := x.EventRegistry.Publish(
-			context.Background(),
-			event.New(MessageCreatedInRoomEvent, message),
-		); err != nil {
 		}
 
 		x.Room.Broadcast <- message
