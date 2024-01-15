@@ -21,11 +21,11 @@ func NewRegistry() *Registry {
 }
 
 // Subscribe adds a new handler for the given event.
-func (x *Registry) Subscribe(event Event, handler Handler) {
+func (x *Registry) Subscribe(eventName string, handler Handler) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
-	x.handlers[event.Name] = append(x.handlers[event.Name], handler)
+	x.handlers[eventName] = append(x.handlers[eventName], handler)
 }
 
 // Publish publishes the given event to all its handlers.
