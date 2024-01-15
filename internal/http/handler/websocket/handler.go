@@ -14,6 +14,11 @@ type Handler struct {
 	registry *event.Registry
 }
 
+// NewHandler creates a new websocket handler.
+func NewHandler(registry *event.Registry) *Handler {
+	return &Handler{registry: registry}
+}
+
 // HandleConnect handles a new /chat connection.
 // It hanldes websocket upgrades and notifies about connection details.
 func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
