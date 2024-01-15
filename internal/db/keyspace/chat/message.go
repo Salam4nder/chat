@@ -80,7 +80,7 @@ func (x *ScyllaMessageRepository) CreateMessageByRoom(
 	return nil
 }
 
-// ReadMessagesByRoomID reads all messages from a room based on a roomID.
+// ReadMessagesByRoomID reads all message entries from a room based on a roomID.
 func (x *ScyllaMessageRepository) ReadMessagesByRoomID(
 	ctx context.Context,
 	roomID string,
