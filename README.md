@@ -1,16 +1,20 @@
 # chat
-Chat application using ScyllaDB and Kafka.
+Chat application using ScyllaDB and NATS.
 
 ## Running
-This app is WIP, so running it is kind of hacky at the moment.
+`make scylla` to spin up a single-node ScyllaDB instance.
 
-`make scylla` to spin up a single-node ScyllaDB instance and wait ~30 sec for it to boot up.
+`make nats` to spin up NATS.
 
 `make migrate` to apply the migration files found in `internal/db/cql`.
 
 `make server` to start serving requests.
 
 `make client` to connect to the websocket server.
+
+### Cleanup
+
+`make scylla-rm` & `make nats-rm`.
 
 ## Testing
 Run tests with `make test` or with `go test ./...`. Tests that need a database connection will be excluded from these commands.
