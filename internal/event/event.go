@@ -1,52 +1,34 @@
 package event
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+var (
+	ErrWrongEventType    = errors.New("wrong event type")
+	ErrInvalidEventError = errors.New("invalid event")
+)
+
 // Payload defines an event payload.
 type Payload any
 
-// IEvent defines an abstract event.
-type IEvent interface {
-	ID() string
-	// Name returns the event name
-	// that the handlers will subscribe to.
-	Name() string
-	Payload() Payload
-}
-
 // Event defines an event.
 type Event struct {
-	id        string
-	name      string
-	payload   Payload
-	occuredAt time.Time
+	ID        string
+	Name      string
+	Payload   Payload
+	OccuredAt time.Time
 }
 
 // New returns a new event.
 func New(name string, payload Payload) Event {
 	return Event{
-		id:        uuid.NewString(),
-		name:      name,
-		payload:   payload,
-		occuredAt: time.Now(),
+		ID:        uuid.NewString(),
+		Name:      name,
+		Payload:   payload,
+		OccuredAt: time.Now(),
 	}
-}
-
-// ID returns the event ID.
-func (x Event) ID() string {
-	return x.id
-}
-
-// Name returns the event name.
-func (x Event) Name() string {
-	return x.name
-}
-
-// Payload returns the event payload.
-func (x Event) Payload() Payload {
-	return x.payload
 }
