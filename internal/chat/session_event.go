@@ -50,7 +50,7 @@ func (x NewSessionConnectedEventPayload) Valid() error {
 }
 
 // HandleNewSessionConnectedEvent handles a new session connected event.
-func (s *SessionService) HandleNewSessionConnectedEvent(ctx context.Context, evt event.Event) error {
+func (s *SessionService) HandleNewSessionConnectedEvent(_ context.Context, evt event.Event) error {
 	log.Info().Msg("HandleNewSessionConnectedEvent ->")
 	defer log.Info().Msg("HandleNewSessionConnectedEvent <-")
 
