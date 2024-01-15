@@ -4,19 +4,24 @@ import (
 	"net/http"
 
 	"github.com/Salam4nder/chat/internal/chat"
+	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
 )
 
-func HandleWS(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	registry *event.Registry
+}
+
+// HandleConnect handles a new /chat connection.
+// It hanldes websocket upgrades and notifies about connection details.
+func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Error().Err(err).Msg("websocket: upgrading connection")
@@ -27,7 +32,6 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 		log.Error().Msg("websocket: url is nil")
 		return
 	}
-
 	query := r.URL.Query()
 	roomID, err := uuid.Parse(query.Get("roomID"))
 	if err != nil {
@@ -39,7 +43,7 @@ func HandleWS(w http.ResponseWriter, r *http.Request) {
 	username := query.Get("name")
 	if username == "" {
 		log.Warn().
-			Msg("websocket: parsing url query for name")
+			Msg("websocket: parsing url query for username")
 
 		username = "unknown"
 	}
