@@ -51,17 +51,17 @@ func (x SessionConnectedPayload) Valid() error {
 }
 
 // HandleSessionConnectedEvent handles a new session connected event.
-func (x *SessionService) HandleSessionConnectedEvent(_ context.Context, evt event.Event) error {
+func (x *SessionService) HandleSessionConnectedEvent(ctx context.Context, evt event.Event) error {
 	log.Info().Msg("HandleNewSessionConnectedEvent ->")
 	defer log.Info().Msg("HandleNewSessionConnectedEvent <-")
 
 	payload, ok := evt.Payload.(SessionConnectedPayload)
 	if !ok {
-		return event.ErrWrongEventType
+		return event.ErrInvalidEventType
 	}
 
 	if err := payload.Valid(); err != nil {
-		return fmt.Errorf("chat: %w, %w", event.ErrInvalidEventError, err)
+		return fmt.Errorf("chat: %w, %w", event.ErrInvalidEventPayloadError, err)
 	}
 
 	room, exists := Rooms[payload.RoomID]
@@ -78,7 +78,7 @@ func (x *SessionService) HandleSessionConnectedEvent(_ context.Context, evt even
 		x.registry,
 	)
 	room.Join <- session
-	go session.Read()
+	go session.Read(ctx)
 	go session.Write()
 
 	return nil
