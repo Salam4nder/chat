@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/Salam4nder/chat/internal/chat"
@@ -45,6 +46,13 @@ func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 			Msg("websocket: parsing url query for roomID")
 		return
 	}
+	userID, err := uuid.Parse(query.Get("userID"))
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("websocket: parsing url query for userID")
+		return
+	}
 	username := query.Get("name")
 	if username == "" {
 		log.Warn().
@@ -54,8 +62,9 @@ func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := x.registry.Publish(
-		r.Context(),
+		context.Background(),
 		event.New(chat.SessionConnectedEvent, chat.SessionConnectedPayload{
+			UserID:   userID.String(),
 			RoomID:   roomID.String(),
 			Username: username,
 			Conn:     conn,
