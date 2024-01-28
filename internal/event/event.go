@@ -15,7 +15,7 @@ var (
 
 // Handler defines an event handler.
 // Errors are logged and ignored.
-type Handler func(ctx context.Context, evt Event)
+type Handler func(ctx context.Context, evt Event) error
 
 // Payload defines an event payload.
 type Payload any
