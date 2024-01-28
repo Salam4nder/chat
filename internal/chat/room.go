@@ -2,7 +2,6 @@ package chat
 
 import (
 	"bytes"
-	"context"
 	"encoding/gob"
 	"errors"
 	"os"
@@ -65,13 +64,13 @@ type Room struct {
 
 // NewRoom returns a new room with the given ID.
 // Pass in nil to generate a new ID.
-func NewRoom(roomID *string, registry *event.Registry) *Room {
+func NewRoom(roomID *string, registry *event.Registry) (*Room, error) {
 	if roomID == nil {
 		str := uuid.NewString()
 		roomID = &str
 	}
 	if registry == nil {
-		registry = event.NewRegistry()
+		return nil, errors.New("chat: event registry is nil")
 	}
 	return &Room{
 		ID:            *roomID,
@@ -79,19 +78,19 @@ func NewRoom(roomID *string, registry *event.Registry) *Room {
 		Leave:         make(chan *UserSess),
 		Sessions:      make(map[*UserSess]empty),
 		eventRegistry: registry,
-	}
+	}, nil
 }
 
 // Run runs the main chat room engine.
 // It will handle joins, leaves and writes.
-func (x *Room) Run(ctx context.Context) {
+func (x *Room) Run() {
 	for {
 		select {
 		case session := <-x.Join:
 			x.mu.Lock()
 			x.Sessions[session] = empty{}
 			x.mu.Unlock()
-			go x.serveConn(ctx, session)
+			go x.serveConn(session)
 			log.Info().Msgf("chat: user joined room %s", x.ID)
 
 		case session := <-x.Leave:
@@ -108,7 +107,7 @@ func (x *Room) Run(ctx context.Context) {
 	}
 }
 
-func (x *Room) serveConn(ctx context.Context, sess *UserSess) {
+func (x *Room) serveConn(sess *UserSess) {
 	for {
 		mType, m, err := sess.Conn.ReadMessage()
 		if err != nil {
@@ -133,7 +132,6 @@ func (x *Room) serveConn(ctx context.Context, sess *UserSess) {
 		}
 
 		if err := x.eventRegistry.Publish(
-			ctx,
 			event.New(MessageCreatedInRoomEvent, message),
 		); err != nil {
 			log.Error().Err(err).Msg("chat: publishing message")
