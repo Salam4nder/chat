@@ -41,12 +41,11 @@ func main() {
 
 	go func() {
 		for {
-			_, message, err := conn.ReadMessage()
+			_, _, err := conn.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
 				return
 			}
-			log.Printf("recv: %s", message)
 		}
 	}()
 
