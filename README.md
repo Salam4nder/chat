@@ -1,5 +1,5 @@
 # chat
-Distributed chat application using Websocket, ScyllaDB and NATS.
+Chat application using Websocket, ScyllaDB and NATS.
 It is lightweigth and horizontally scalable.
 
 **Rough, ~but beautiful~ high-level overview:**
@@ -36,6 +36,6 @@ To apply the migration, run either `make migrate` or `go run cmd/migration/main.
 `make client` will connect to a default chat room. Run `go run cmd/client/main.go --roomID=<uuid>` to connect to a custom room.
 
 ## TODO
-# Handling reconnection.
-# End-to-end encryption.
-# Support for Audio & Video.
+* Handling reconnection.
+* End-to-end encryption.
+* Support for Audio & Video.
