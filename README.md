@@ -34,3 +34,8 @@ To apply the migration, run either `make migrate` or `go run cmd/migration/main.
 ## Client
 `cmd/client` tool provides a helper chat client for quickly joining and troubleshooting a websocket connection.
 `make client` will connect to a default chat room. Run `go run cmd/client/main.go --roomID=<uuid>` to connect to a custom room.
+
+## TODO
+# Handling reconnection.
+# End-to-end encryption.
+# Support for Audio & Video.
