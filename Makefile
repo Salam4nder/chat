@@ -7,7 +7,7 @@ server:
 	go run cmd/chat/main.go
 
 client:
-	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36 --name=client1
+	go run cmd/client/main.go --roomID=C828351E-ED3F-4D1B-AE05-293F92D95B36 --userID=04F9212D-7D69-4E2A-B63E-60C666E26363 --name=client1
 	
 docker:
 	docker build -t chat .
