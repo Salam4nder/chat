@@ -55,7 +55,7 @@ func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 
 	if err := x.registry.Publish(
 		r.Context(),
-		event.New(chat.NewSessionConnectedEvent, chat.NewSessionConnectedEventPayload{
+		event.New(chat.SessionConnectedEvent, chat.SessionConnectedPayload{
 			RoomID:   roomID.String(),
 			Username: username,
 			Conn:     conn,
