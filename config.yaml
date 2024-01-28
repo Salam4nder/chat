@@ -13,5 +13,5 @@ scylladb:
   replicationFactor: 3
   consistency: 1
 nats:
-  host: "nats"
+  host: "0.0.0.0"
   port: 4222
