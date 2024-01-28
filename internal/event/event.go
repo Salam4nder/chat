@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -8,9 +9,13 @@ import (
 )
 
 var (
-	ErrWrongEventType    = errors.New("wrong event type")
-	ErrInvalidEventError = errors.New("invalid event")
+	ErrInvalidEventType         = errors.New("event type invalid")
+	ErrInvalidEventPayloadError = errors.New("event payload invalid")
 )
+
+// Handler defines an event handler.
+// Errors are logged and ignored.
+type Handler func(ctx context.Context, evt Event)
 
 // Payload defines an event payload.
 type Payload any
