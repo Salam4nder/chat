@@ -1,7 +1,6 @@
 package event
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -15,7 +14,7 @@ var (
 
 // Handler defines an event handler.
 // Errors are logged and ignored.
-type Handler func(ctx context.Context, evt Event) error
+type Handler func(evt Event) error
 
 // Payload defines an event payload.
 type Payload any
