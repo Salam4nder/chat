@@ -1,7 +1,6 @@
 package event
 
 import (
-	"context"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -31,12 +30,12 @@ func (x *Registry) Subscribe(eventName string, handler Handler) {
 }
 
 // Publish publishes the given event to all its handlers.
-func (x *Registry) Publish(ctx context.Context, event Event) error {
+func (x *Registry) Publish(event Event) error {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 
 	for _, handler := range x.handlers[event.Name] {
-		if err := handler(ctx, event); err != nil {
+		if err := handler(event); err != nil {
 			log.Error().Err(err).Msg("event: handling event")
 			return err
 		}
