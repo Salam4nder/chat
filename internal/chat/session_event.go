@@ -14,6 +14,7 @@ import (
 const SessionConnectedEvent = "session_connected"
 
 var (
+	ErrUserIDInvalid   = errors.New("user id invalid")
 	ErrRoomIDInvalid   = errors.New("room id invalid")
 	ErrUsernameInvalid = errors.New("username invalid")
 	ErrConnInvalid     = errors.New("conn invalid")
@@ -27,31 +28,50 @@ type SessionService struct {
 
 // NewSessionService creates a new SessionService.
 // It handles session events and communicates with NATS.
-func NewSessionService(natsClient *nats.Conn, registry *event.Registry) *SessionService {
-	return &SessionService{natsClient: natsClient, registry: registry}
+func NewSessionService(
+	natsClient *nats.Conn,
+	registry *event.Registry,
+) *SessionService {
+	return &SessionService{
+		natsClient: natsClient,
+		registry:   registry,
+	}
 }
 
+// SessionConnectedPayload is the payload for
+// a SessionConnectedEvent.
 type SessionConnectedPayload struct {
+	UserID   string
 	RoomID   string
 	Username string
 	Conn     *websocket.Conn
 }
 
+// Valid returns nil if the payload is valid.
 func (x SessionConnectedPayload) Valid() error {
+	var userIDErr, roomIDErr, usernameErr, connErr error
+
+	if x.UserID == "" {
+		userIDErr = ErrUserIDInvalid
+	}
 	if x.RoomID == "" {
-		return ErrRoomIDInvalid
+		roomIDErr = ErrRoomIDInvalid
 	}
 	if x.Username == "" {
-		return ErrUsernameInvalid
+		usernameErr = ErrUsernameInvalid
 	}
 	if x.Conn == nil {
-		return ErrConnInvalid
+		connErr = ErrConnInvalid
 	}
-	return nil
+
+	return errors.Join(userIDErr, roomIDErr, usernameErr, connErr)
 }
 
 // HandleSessionConnectedEvent handles a new session connected event.
-func (x *SessionService) HandleSessionConnectedEvent(ctx context.Context, evt event.Event) error {
+func (x *SessionService) HandleSessionConnectedEvent(
+	ctx context.Context,
+	evt event.Event,
+) error {
 	log.Info().Msg("HandleNewSessionConnectedEvent ->")
 	defer log.Info().Msg("HandleNewSessionConnectedEvent <-")
 
@@ -61,25 +81,28 @@ func (x *SessionService) HandleSessionConnectedEvent(ctx context.Context, evt ev
 	}
 
 	if err := payload.Valid(); err != nil {
-		return fmt.Errorf("chat: %w, %w", event.ErrInvalidEventPayloadError, err)
+		return fmt.Errorf(
+			"chat: %w, %w",
+			event.ErrInvalidEventPayloadError,
+			err,
+		)
 	}
 
-	room, exists := Rooms[payload.RoomID]
+	room, exists := ChatRomoms[payload.RoomID]
 	if !exists {
-		room = NewRoom(&payload.RoomID)
-		Rooms[payload.RoomID] = room
-		go room.Run()
+		room = NewRoom(&payload.RoomID, x.registry)
+		ChatRomoms[payload.RoomID] = room
+		go room.Run(ctx)
 	}
 
-	session := NewSession(
-		Rooms[payload.RoomID],
-		payload.Conn,
-		payload.Username,
-		x.registry,
-	)
+	session := &UserSess{
+		UserID:      payload.UserID,
+		RoomID:      payload.RoomID,
+		DisplayName: payload.Username,
+		Conn:        payload.Conn,
+	}
+
 	room.Join <- session
-	go session.Read(ctx)
-	go session.Write()
 
 	return nil
 }
