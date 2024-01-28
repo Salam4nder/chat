@@ -41,13 +41,11 @@ func (x *MessageService) HandleMessageCreatedInRoomEvent(
 
 	payload, ok := evt.Payload.(Message)
 	if !ok {
-		log.Error().Msg("HandleMessageCreatedInRoomEvent: wrong event type")
-		return event.ErrWrongEventType
+		return event.ErrInvalidEventType
 	}
 
 	if err := payload.Valid(); err != nil {
-		log.Error().Err(err).Msg("HandleMessageCreatedInRoomEvent: invalid event")
-		return fmt.Errorf("chat: %w: %w", event.ErrInvalidEventError, err)
+		return fmt.Errorf("chat: %w: %w", event.ErrInvalidEventPayloadError, err)
 	}
 
 	if err := x.messageRepo.CreateMessageByRoom(ctx, db.CreateMessageByRoomParams{
@@ -56,24 +54,17 @@ func (x *MessageService) HandleMessageCreatedInRoomEvent(
 		Sender: payload.Author,
 		RoomID: payload.RoomID,
 	}); err != nil {
-		log.Error().Err(err).Msg("HandleMessageCreatedInRoomEvent: persisting message in room")
 		return fmt.Errorf("message service: persisting message in room, %w", err)
 	}
 
 	buf := bytes.Buffer{}
 	if err := gob.NewEncoder(&buf).Encode(payload); err != nil {
-		log.Error().Err(err).Msg("HandleMessageCreatedInRoomEvent: encoding event")
 		return fmt.Errorf("message service: encoding event, %w", err)
 	}
 
 	if err := x.natsClient.Publish(evt.Name, buf.Bytes()); err != nil {
-		log.Error().Err(err).Msg("HandleMessageCreatedInRoomEvent: publishing event")
 		return fmt.Errorf("message service: publishing event, %w", err)
 	}
-	log.Info().
-		Str("event_name", evt.Name).
-		Str("event_payload", string(buf.Bytes())).
-		Msg("chat: published event")
 
 	return nil
 }
