@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"time"
 
 	db "github.com/Salam4nder/chat/internal/db/keyspace/chat"
 	"github.com/Salam4nder/chat/internal/event"
@@ -33,7 +34,6 @@ func NewMessageService(repo db.MessageRepository, client *nats.Conn) *MessageSer
 }
 
 func (x *MessageService) HandleMessageCreatedInRoomEvent(
-	ctx context.Context,
 	evt event.Event,
 ) error {
 	log.Info().Msg("HandleMessageCreatedInRoomEvent ->")
@@ -48,6 +48,8 @@ func (x *MessageService) HandleMessageCreatedInRoomEvent(
 		return fmt.Errorf("chat: %w: %w", event.ErrInvalidEventPayloadError, err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	if err := x.messageRepo.CreateMessageByRoom(ctx, db.CreateMessageByRoomParams{
 		Data:   payload.Body,
 		Type:   payload.TypeString(),
