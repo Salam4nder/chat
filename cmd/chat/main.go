@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"errors"
 	"net/http"
 	"os"
@@ -71,19 +73,41 @@ func main() {
 	// userRepo := db.NewScyllaUserRepository(scyllaSession)
 	messageRepo := db.NewScyllaMessageRepository(scyllaSession)
 
-	// In-memory pub/sub.
-	registry := event.NewRegistry()
+	// In-memory event registry.
+	eventRegistry := event.NewRegistry()
 
 	// Services.
 	messageService := chat.NewMessageService(messageRepo, natsClient)
-	sessionService := chat.NewSessionService(natsClient)
+	sessionService := chat.NewSessionService(natsClient, eventRegistry)
 
 	// Concurrent-safe map of chat rooms.
 	chat.Rooms = make(map[string]*chat.Room)
 
 	// Subscribers.
-	registry.Subscribe(chat.MessageCreatedInRoomEvent, messageService.HandleMessageCreatedInRoomEvent)
-	registry.Subscribe(chat.NewSessionConnectedEvent, sessionService.HandleNewSessionConnectedEvent)
+	eventRegistry.Subscribe(chat.SessionConnectedEvent, sessionService.HandleSessionConnectedEvent)
+	eventRegistry.Subscribe(chat.MessageCreatedInRoomEvent, messageService.HandleMessageCreatedInRoomEvent)
+
+	natsChan := make(chan *nats.Msg, 64)
+	messageSub, err := natsClient.ChanSubscribe(chat.MessageCreatedInRoomEvent, natsChan)
+	exitOnError(err)
+
+	go func(ch chan os.Signal) {
+		for {
+			select {
+			case msg := <-natsChan:
+				if msg == nil {
+					return
+				}
+				var message chat.Message
+				if err := gob.NewDecoder(bytes.NewReader(msg.Data)).
+					Decode(&message); err != nil {
+					log.Error().Err(err).Msg("failed to decode message")
+				}
+			case <-ch:
+				return
+			}
+		}
+	}(interruptCh)
 
 	// HTTP server.
 	server := &http.Server{
@@ -93,7 +117,7 @@ func main() {
 		WriteTimeout: httpWriteTimeout,
 	}
 	healthHandler := health.NewHandler(scyllaSession)
-	websocketHandler := websocket.NewHandler(registry)
+	websocketHandler := websocket.NewHandler(eventRegistry)
 	http.HandleFunc("/health", healthHandler.Health)
 	http.HandleFunc("/chat", websocketHandler.HandleConnect)
 	go func() {
@@ -112,6 +136,11 @@ func main() {
 	<-interruptCh
 	log.Info().Msg("main: cleaning up...")
 	scyllaSession.Close()
+	if err := messageSub.Unsubscribe(); err != nil {
+		log.Error().Err(err).Msg("main: failed to unsubscribe from nats")
+	}
+	close(natsChan)
+	natsClient.Close()
 	if err = server.Shutdown(context.Background()); err != nil {
 		log.Error().
 			Err(err).
