@@ -1,4 +1,5 @@
 .PHONY: help test server docker up down logs logs-chat logs-db evans proto lint scylla client migrate test-db test-db/down test-db/run
+
 test: 
 	go test -v ./...
 
@@ -12,10 +13,15 @@ docker:
 	docker build -t chat .
 
 scylla:
-	docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
+	# docker run --name scylla --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
+	docker run --name scylla --network dev --hostname scylladb -d -p 9042:9042 scylladb/scylla --smp 1
 
 scylla-rm:
 	docker rm -f -v scylla
+
+# Interactive CQL shell for Scylla
+cql:
+	docker run -it --name cql --rm --network dev scylladb/scylla-cqlsh scylladb
 
 nats:
 	docker run -d --name nats --rm -p 4222:4222 -p 8222:8222 nats --http_port 8222
