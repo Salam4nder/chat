@@ -1,9 +1,11 @@
 package chat
 
 import (
+	"context"
 	"errors"
 	"time"
 
+	"github.com/Salam4nder/chat/internal/event"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
@@ -19,6 +21,8 @@ type Session struct {
 	// Username is the displayed name of the connected user.
 	Username string
 	UserID   uuid.UUID
+
+	registry *event.Registry
 }
 
 // NewSession returns a new session.
@@ -26,6 +30,7 @@ func NewSession(
 	room *Room,
 	conn *websocket.Conn,
 	username string,
+	registry *event.Registry,
 ) *Session {
 	return &Session{
 		ID:       uuid.NewString(),
@@ -34,6 +39,7 @@ func NewSession(
 		Conn:     conn,
 		In:       make(chan Message),
 		Username: username,
+		registry: registry,
 	}
 }
 
@@ -67,12 +73,20 @@ func (x *Session) readPump() {
 		}
 
 		message := Message{
+			ID:        uuid.New(),
 			Type:      mType,
 			RoomID:    x.Room.ID,
 			SessionID: x.ID,
 			Body:      m,
 			Author:    x.Username,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
+		}
+
+		if err := x.registry.Publish(
+			context.TODO(),
+			event.New(MessageCreatedInRoomEvent, message),
+		); err != nil {
+			log.Error().Err(err).Msg("chat: publishing message")
 		}
 
 		x.Room.Broadcast <- message
