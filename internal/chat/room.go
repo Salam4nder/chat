@@ -24,10 +24,15 @@ type Room struct {
 	Broadcast chan Message
 }
 
-// NewRoom returns a new room.
-func NewRoom() *Room {
+// NewRoom returns a new room with the given ID.
+// Pass in nil to generate a new ID.
+func NewRoom(roomID *string) *Room {
+	if roomID == nil {
+		str := uuid.NewString()
+		roomID = &str
+	}
 	return &Room{
-		ID:        uuid.NewString(),
+		ID:        *roomID,
 		Join:      make(chan *Session),
 		Leave:     make(chan *Session),
 		Active:    true,
@@ -62,11 +67,11 @@ func (x *Room) Run() {
 				session.In <- message
 			}
 
-			log.Info().
-				Str("body", string(message.Body)).
-				Str("author", message.Author).
-				Str("room", x.ID).
-				Send()
+			// log.Info().
+			// 	Str("body", string(message.Body)).
+			// 	Str("author", message.Author).
+			// 	Str("room", x.ID).
+			// 	Send()
 		}
 	}
 }
