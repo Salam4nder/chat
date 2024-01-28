@@ -1,5 +1,9 @@
 # chat
-Chat application using ScyllaDB and NATS.
+Distributed chat application using Websocket, ScyllaDB and NATS.
+It is lightweigth and horizontally scalable.
+
+**Rough, ~but beautiful~ high-level overview:**
+![chat](assets/chat-archi.png)
 
 ## Running
 `make scylla` to spin up a single-node ScyllaDB instance.
