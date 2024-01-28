@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
@@ -68,10 +67,7 @@ func (x SessionConnectedPayload) Valid() error {
 }
 
 // HandleSessionConnectedEvent handles a new session connected event.
-func (x *SessionService) HandleSessionConnectedEvent(
-	ctx context.Context,
-	evt event.Event,
-) error {
+func (x *SessionService) HandleSessionConnectedEvent(evt event.Event) error {
 	log.Info().Msg("HandleNewSessionConnectedEvent ->")
 	defer log.Info().Msg("HandleNewSessionConnectedEvent <-")
 
@@ -90,9 +86,13 @@ func (x *SessionService) HandleSessionConnectedEvent(
 
 	room, exists := ChatRomoms[payload.RoomID]
 	if !exists {
-		room = NewRoom(&payload.RoomID, x.registry)
+		var err error
+		room, err = NewRoom(&payload.RoomID, x.registry)
+		if err != nil {
+			return err
+		}
 		ChatRomoms[payload.RoomID] = room
-		go room.Run(ctx)
+		go room.Run()
 	}
 
 	session := &UserSess{
