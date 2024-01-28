@@ -49,11 +49,11 @@ func (x *Session) Write() {
 }
 
 // Read reads messages from the websocket connection.
-func (x *Session) Read() {
-	x.readPump()
+func (x *Session) Read(ctx context.Context) {
+	x.readPump(ctx)
 }
 
-func (x *Session) readPump() {
+func (x *Session) readPump(ctx context.Context) {
 	defer func() {
 		x.Active = false
 		x.Room.Leave <- x
@@ -83,7 +83,7 @@ func (x *Session) readPump() {
 		}
 
 		if err := x.registry.Publish(
-			context.TODO(),
+			ctx,
 			event.New(MessageCreatedInRoomEvent, message),
 		); err != nil {
 			log.Error().Err(err).Msg("chat: publishing message")
