@@ -20,7 +20,9 @@ func Test_CreateMessageByRoom(t *testing.T) {
 		timeNow := time.Now().UTC()
 
 		t.Cleanup(func() {
-			err := testMessageRepo.Session().Query("TRUNCATE chat.message_by_room").Exec()
+			err := testMessageRepo.Session().
+				Query("TRUNCATE chat.message_by_room").
+				Exec()
 			assert.NoError(t, err)
 		})
 
@@ -31,7 +33,6 @@ func Test_CreateMessageByRoom(t *testing.T) {
 			RoomID:    uuid.NewString(),
 			Timestamp: timeNow,
 		}
-
 		err := testMessageRepo.CreateMessageByRoom(ctx, params)
 		require.NoError(t, err)
 
@@ -39,7 +40,10 @@ func Test_CreateMessageByRoom(t *testing.T) {
               FROM chat.message_by_room 
               WHERE room_id = ?`
 		messages := make([]Message, 0)
-		scanner := testMessageRepo.Session().Query(query, params.RoomID).Iter().Scanner()
+		scanner := testMessageRepo.Session().
+			Query(query, params.RoomID).
+			Iter().
+			Scanner()
 
 		for scanner.Next() {
 			var message Message
@@ -66,11 +70,12 @@ func Test_CreateMessageByRoom(t *testing.T) {
 }
 
 func Test_ReadMessagesByRoomID(t *testing.T) {
+    ctx := context.Background()
 	insertMessages := func(t *testing.T, params CreateMessageByRoomParams, count int) {
 		for i := 0; i < count; i++ {
 			query := `INSERT INTO chat.message_by_room 
-              (id, data, type, sender, room_id, time) 
-              VALUES (?, ?, ?, ?, ?, ?)`
+                      (id, data, type, sender, room_id, time) 
+                      VALUES (?, ?, ?, ?, ?, ?)`
 
 			err := testMessageRepo.Session().Query(
 				query,
@@ -87,7 +92,8 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 	t.Run("Success 1 message", func(t *testing.T) {
 		t.Cleanup(func() {
-			err := testMessageRepo.Session().Query("TRUNCATE chat.message_by_room").Exec()
+			err := testMessageRepo.Session().
+            Query("TRUNCATE chat.message_by_room").Exec()
 			assert.NoError(t, err)
 		})
 		timeNow := time.Now().UTC()
@@ -102,7 +108,7 @@ func Test_ReadMessagesByRoomID(t *testing.T) {
 
 		insertMessages(t, params, 1)
 
-		messages, err := testMessageRepo.ReadMessagesByRoomID(context.Background(), params.RoomID)
+		messages, err := testMessageRepo.ReadMessagesByRoomID(ctx, params.RoomID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(messages))
 		m := messages[0]

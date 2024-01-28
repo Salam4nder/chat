@@ -100,7 +100,6 @@ func (x *ScyllaMessageRepository) ReadMessagesByRoomID(
 
 	for scanner.Next() {
 		var message Message
-
 		if err := scanner.Scan(
 			&message.ID,
 			&message.Data,
