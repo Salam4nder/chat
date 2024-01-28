@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/Salam4nder/chat/internal/chat"
@@ -62,7 +61,6 @@ func (x *Handler) HandleConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := x.registry.Publish(
-		context.Background(),
 		event.New(chat.SessionConnectedEvent, chat.SessionConnectedPayload{
 			UserID:   userID.String(),
 			RoomID:   roomID.String(),
