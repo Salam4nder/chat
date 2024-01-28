@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const NewSessionConnectedEvent = "new_session_connected"
+const SessionConnectedEvent = "session_connected"
 
 var (
 	ErrRoomIDInvalid   = errors.New("room id invalid")
@@ -22,21 +22,22 @@ var (
 // SessionService handles session events and communicates with NATS.
 type SessionService struct {
 	natsClient *nats.Conn
+	registry   *event.Registry
 }
 
 // NewSessionService creates a new SessionService.
 // It handles session events and communicates with NATS.
-func NewSessionService(natsClient *nats.Conn) *SessionService {
-	return &SessionService{natsClient: natsClient}
+func NewSessionService(natsClient *nats.Conn, registry *event.Registry) *SessionService {
+	return &SessionService{natsClient: natsClient, registry: registry}
 }
 
-type NewSessionConnectedEventPayload struct {
+type SessionConnectedPayload struct {
 	RoomID   string
 	Username string
 	Conn     *websocket.Conn
 }
 
-func (x NewSessionConnectedEventPayload) Valid() error {
+func (x SessionConnectedPayload) Valid() error {
 	if x.RoomID == "" {
 		return ErrRoomIDInvalid
 	}
@@ -49,12 +50,12 @@ func (x NewSessionConnectedEventPayload) Valid() error {
 	return nil
 }
 
-// HandleNewSessionConnectedEvent handles a new session connected event.
-func (s *SessionService) HandleNewSessionConnectedEvent(_ context.Context, evt event.Event) error {
+// HandleSessionConnectedEvent handles a new session connected event.
+func (x *SessionService) HandleSessionConnectedEvent(_ context.Context, evt event.Event) error {
 	log.Info().Msg("HandleNewSessionConnectedEvent ->")
 	defer log.Info().Msg("HandleNewSessionConnectedEvent <-")
 
-	payload, ok := evt.Payload.(NewSessionConnectedEventPayload)
+	payload, ok := evt.Payload.(SessionConnectedPayload)
 	if !ok {
 		return event.ErrWrongEventType
 	}
@@ -65,16 +66,16 @@ func (s *SessionService) HandleNewSessionConnectedEvent(_ context.Context, evt e
 
 	room, exists := Rooms[payload.RoomID]
 	if !exists {
-		room = NewRoom()
+		room = NewRoom(&payload.RoomID)
 		Rooms[payload.RoomID] = room
 		go room.Run()
-
 	}
 
 	session := NewSession(
 		Rooms[payload.RoomID],
 		payload.Conn,
 		payload.Username,
+		x.registry,
 	)
 	room.Join <- session
 	go session.Read()
