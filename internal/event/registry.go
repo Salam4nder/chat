@@ -3,6 +3,8 @@ package event
 import (
 	"context"
 	"sync"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Registry is a concurrent-safe registry that holds events and their handlers.
@@ -35,6 +37,7 @@ func (x *Registry) Publish(ctx context.Context, event Event) error {
 
 	for _, handler := range x.handlers[event.Name] {
 		if err := handler(ctx, event); err != nil {
+			log.Error().Err(err).Msg("event: handling event")
 			return err
 		}
 	}
