@@ -15,7 +15,8 @@ import (
 var (
 	addr         = flag.String("addr", "localhost:8080", "http service address")
 	roomID       = flag.String("roomID", "", "room ID")
-	friendlyName = flag.String("name", "", "friendly name")
+	userID       = flag.String("userID", "", "user ID")
+	friendlyName = flag.String("name", "", "display name")
 )
 
 func main() {
@@ -29,9 +30,9 @@ func main() {
 		Scheme:   "ws",
 		Host:     *addr,
 		Path:     "/chat",
-		RawQuery: fmt.Sprintf("%s=%s&%s=%s", "roomID", *roomID, "name", *friendlyName),
+		RawQuery: fmt.Sprintf("%s=%s&%s=%s&%s=%s", "roomID", *roomID, "name", *friendlyName, "userID", *userID),
 	}
-	log.Printf("connecting to %s", u.String())
+	log.Printf("client: connecting to %s", u.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
